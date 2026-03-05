@@ -3,6 +3,7 @@ includes:
 
 parameters:
     level: 8
+    checkMissingTypehints: false
     paths:
         - src
         - tests
@@ -10,5 +11,4 @@ parameters:
         - tests/phpstan-bootstrap.php
     excludePaths:
         analyse:
-            - tests/compatibility.php
             - tests/data/travis
