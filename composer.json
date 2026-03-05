@@ -32,5 +32,16 @@
         "branch-alias": {
             "dev-master": "1.0.x-dev"
         }
+    },
+    "config": {
+        "allow-plugins": {
+            "yiisoft/yii2-composer": true
+        }
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^9.6",
+        "phpstan/phpstan": "^1.12",
+        "vimeo/psalm": "^5.26",
+        "roave/security-advisories": "dev-latest"
     }
 }

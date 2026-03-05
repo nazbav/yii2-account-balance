@@ -1,48 +1,61 @@
-name: CI
+name: PHP CI
 
-  on:
-    push:
-      branches: [ "master" ]
-    pull_request:
-      branches: [ "master" ]
+on:
+  push:
+    branches: ["master", "main"]
+  pull_request:
+    branches: ["master", "main"]
+  workflow_dispatch:
 
-  permissions:
-    contents: read
+permissions:
+  contents: read
 
-  jobs:
-    test:
-      runs-on: ubuntu-latest
-      strategy:
-        fail-fast: false
-        matrix:
-          php: [ "8.1", "8.3" ]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ["8.1", "8.3"]
 
-      steps:
-        - uses: actions/checkout@v4
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: yii2test
+          MYSQL_USER: travis
+          MYSQL_PASSWORD: test
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd "mysqladmin ping -h 127.0.0.1 -uroot -proot --silent"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
-        - name: Setup PHP
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
-          extensions: mbstring, pdo_sqlite, sqlite3
+          extensions: mbstring, pdo_mysql, mysqli, pdo_sqlite, sqlite3
           coverage: none
+          tools: composer:v2
 
-        - name: Validate composer files
-          run: composer validate --strict
+      - name: Validate composer files
+        run: composer validate --strict
 
-        - name: Allow Yii2 composer plugin
-          run: composer config --no-plugins allow-plugins.yiisoft/yii2-composer true
+      - name: Allow Yii2 composer plugin
+        run: composer config --no-plugins allow-plugins.yiisoft/yii2-composer true
 
-        - name: Cache Composer packages
-          uses: actions/cache@v4
-          with:
-            path: vendor
-            key: ${{ runner.os }}-php${{ matrix.php }}-${{ hashFiles('**/composer.lock') }}
-            restore-keys: |
-              ${{ runner.os }}-php${{ matrix.php }}-
+      - name: Install base dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
 
-        - name: Install dependencies
-          run: composer install --no-interaction --prefer-dist --no-progress
+      - name: Install test dependencies
+        run: composer require --dev --no-interaction --prefer-dist --no-progress --with-all-dependencies "phpunit/phpunit:^9.6"
 
-        - name: Run tests
-          run: vendor/bin/phpunit -c phpunit.xml.dist
+      - name: Run tests
+        run: vendor/bin/phpunit -c phpunit.xml.dist --exclude-group mongodb
