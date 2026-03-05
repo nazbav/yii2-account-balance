@@ -13,6 +13,7 @@ $_SERVER['SCRIPT_FILENAME'] = __FILE__;
 
 require_once(__DIR__ . '/../vendor/autoload.php');
 require_once(__DIR__ . '/../vendor/yiisoft/yii2/Yii.php');
+require_once(__DIR__ . '/autoload-nazbav.php');
 
 Yii::setAlias('@nazbav/tests/unit/balance', __DIR__);
 Yii::setAlias('@nazbav/yii2-account-balance', dirname(__DIR__) . '/src');
