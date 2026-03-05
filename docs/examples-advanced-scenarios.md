@@ -110,7 +110,7 @@ $manager->increase(
     ]
 );
 
-// 2) После антифрод-проверок release в доступный кошелёк.
+// 2) После антифрод-проверок перевод в доступный кошелёк.
 $manager->transfer(
     ['userId' => $referrerUserId, 'walletType' => 'referral_pending'],
     ['userId' => $referrerUserId, 'walletType' => 'bonus_available'],

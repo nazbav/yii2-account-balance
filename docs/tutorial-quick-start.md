@@ -35,6 +35,16 @@ return [
 ];
 ```
 
+Альтернатива через объект правил:
+
+```php
+use nazbav\balance\BalanceRules;
+
+Yii::$app->balanceManager->setBalanceRules(BalanceRules::strict());
+// или
+Yii::$app->balanceManager->enableStrictMode();
+```
+
 ## 3. Минимальная схема MySQL
 
 ```sql
@@ -93,3 +103,15 @@ $manager->revert($expenseId, [
 2. Добавить бизнес-лимиты на период (день/неделя/месяц) по сумме начислений и списаний.
 3. Логировать риск-флаги (`riskScore`, `ipHash`, `deviceHash`, `geo`).
 4. Для реферальных программ и крупных операций использовать отложенное подтверждение.
+
+## 6. Базовая проверка после интеграции
+
+```bash
+composer qa
+```
+
+Если в окружении нет глобального `composer`:
+
+```bash
+php composer.phar qa
+```

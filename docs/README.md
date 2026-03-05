@@ -23,3 +23,14 @@
 - Если нужно внедрить сложную механику (уровни, отложенные начисления, реферальные сценарии): `howto-*` и `examples-advanced-scenarios.md`.
 - Если нужно проверить параметры, события и ограничения: `reference-configuration.md`.
 - Если нужно выстроить контроль мошенничества: `explanation-fraud-controls.md`.
+
+## Проверки качества
+
+- Локальный запуск полного набора проверок: `composer qa`.
+- Состав набора: `phpunit`, `phpstan` (уровень 8), `psalm --taint-analysis`, `composer audit`.
+
+## CI и релизы
+
+- Workflow CI: `.github/workflows/php.yml`.
+- Матрица CI: PHP `8.1` и `8.3`, MySQL `8.0`.
+- История изменений: `CHANGELOG.md`.

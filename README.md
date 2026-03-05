@@ -32,6 +32,8 @@
 - PHP `^8.1` (проверено на `8.1` и `8.3`);
 - Yii2 `~2.0.14`.
 
+Для сценария с `ManagerDb` рекомендуется MySQL `8.0+` (InnoDB, `DECIMAL`, `JSON`).
+
 ## Установка
 
 ```bash
@@ -91,9 +93,9 @@ $manager->revert($pair[0], ['reason' => 'Отмена операции']);
 
 В документации добавлен отдельный прикладной кейс реферальной программы:
 
-- двухсторонняя награда (пригласил + приглашённый);
+- двусторонняя награда (пригласивший + приглашённый);
 - отложенная активация награды после окна риска;
-- защита от self-referral и дублей;
+- защита от саморефералов и дублей;
 - лимиты наград на период;
 - ручная проверка спорных кейсов.
 
@@ -131,6 +133,8 @@ classDiagram
 - `messages/ru/nazbav.balance.php`
 - `messages/en/nazbav.balance.php`
 
+Базовый язык исходных сообщений расширения: `ru-RU` (`sourceLanguage` в `Bootstrap` и `Manager`).
+
 ## Безопасность
 
 Базовые меры в библиотеке:
@@ -151,6 +155,26 @@ vendor/bin/phpunit -c phpunit.xml.dist
 vendor/bin/phpstan analyse -c phpstan.neon --no-progress
 vendor/bin/psalm --taint-analysis --no-cache --output-format=console
 ```
+
+Или одним скриптом через Composer:
+
+```bash
+composer qa
+```
+
+Если глобальный `composer` не установлен:
+
+```bash
+php composer.phar qa
+```
+
+## CI
+
+Workflow: `.github/workflows/php.yml`
+
+- матрица PHP: `8.1` и `8.3`;
+- БД в CI: MySQL `8.0`;
+- проверки: `phpunit`, `phpstan` (уровень 8), `psalm --taint-analysis`, `composer audit`.
 
 ## Лицензия
 

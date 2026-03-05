@@ -61,6 +61,12 @@ $manager->enableStrictMode();
 $manager->setBalanceRules(BalanceRules::strict());
 ```
 
+Публичные методы управления правилами:
+
+- `setBalanceRules(BalanceRules $rules): void`
+- `getBalanceRules(): BalanceRules`
+- `enableStrictMode(int|float $minimumAllowedBalance = 0): void`
+
 ## ManagerDb
 
 Дополнительные параметры:
@@ -72,7 +78,8 @@ $manager->setBalanceRules(BalanceRules::strict());
 Особенности:
 
 - при `forbidNegativeBalance=true` использует атомарное обновление баланса с условием;
-- валидирует имена колонок в динамических местах.
+- валидирует имена колонок в динамических местах;
+- исключает auto-increment PK из явной вставки транзакции.
 
 ## ManagerActiveRecord
 
@@ -113,6 +120,7 @@ $manager->on(Manager::EVENT_BEFORE_CREATE_TRANSACTION, static function ($event) 
 ## i18n
 
 - Категория: `nazbav.balance`
+- Базовый язык исходных сообщений: `ru-RU`
 - Файлы:
   - `messages/ru/nazbav.balance.php`
   - `messages/en/nazbav.balance.php`
