@@ -12,7 +12,7 @@
 
 - `счёт` (`account`) хранит текущее состояние ресурса;
 - `транзакция` (`transaction`) фиксирует изменение баланса;
-- перевод между счетами создаёт две транзакции: списание и зачисление.
+- перевод между счётами создаёт две транзакции: списание и зачисление.
 
 Расширение подходит для:
 
@@ -78,7 +78,7 @@ sequenceDiagram
     M->>M: начало транзакции
     M->>DB: создание дебетовой транзакции
     M->>DB: создание кредитовой транзакции
-    M->>DB: обновление балансов счетов (опционально)
+    M->>DB: обновление балансов счётов (опционально)
     M->>M: фиксация транзакции
     M-->>App: [debitTransactionId, creditTransactionId]
 ```
@@ -237,6 +237,37 @@ $this->createTable('{{%balance_transaction}}', [
 - входные суммы валидируются как числовые;
 - ошибки конфигурации и бизнес-ошибки отдаются через i18n-сообщения;
 - в CI доступны `phpstan`, `psalm --taint-analysis`, `composer audit`.
+
+### Усиление Защиты От Фрода
+
+`Manager` поддерживает базовые контроли предметной области:
+
+- `requirePositiveAmount = true` — запрещает нулевые и отрицательные суммы во внешних операциях;
+- `forbidTransferToSameAccount = true` — блокирует переводы между одинаковыми счетами;
+- `forbidNegativeBalance = true` и `minimumAllowedBalance` — блокируют перерасход.
+
+Пример жёсткой конфигурации для денежных сценариев:
+
+```php
+$manager->requirePositiveAmount = true;
+$manager->forbidTransferToSameAccount = true;
+$manager->forbidNegativeBalance = true;
+$manager->minimumAllowedBalance = 0;
+$manager->accountBalanceAttribute = 'balance';
+```
+
+Для `ManagerDb` и `ManagerActiveRecord` проверка перерасхода выполняется атомарно в `UPDATE` условиями БД.
+
+### Риски И Защиты
+
+```mermaid
+flowchart TD
+    A[Повтор операции из-за ретрая] --> B[Идемпотентный ключ операции в бизнес-слое]
+    C[Овердрафт и гонка списаний] --> D[Атомарный UPDATE с лимитом баланса]
+    E[Перевод на тот же счёт] --> F[Запрет self-transfer]
+    G[Mass assignment в ActiveRecord] --> H[Allow-list атрибутов и исключение auto-increment PK]
+    I[SQL инъекции через динамические поля] --> J[Проверка безопасных имён колонок]
+```
 
 ## Разработка и проверки
 
