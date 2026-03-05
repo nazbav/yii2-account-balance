@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Формат даты в теге: YYYY.MM.DD
+TODAY="$(date +%Y.%m.%d)"
+PREFIX="${TODAY}-"
+
+# Ищем последний тег за сегодня и инкрементим номер
+LAST_NUM="$(git tag --list "${PREFIX}*" \
+  | sed -E "s/^${TODAY}-([0-9]+)$/\1/" \
+  | sort -n | tail -1)"
+
+if [ -z "${LAST_NUM:-}" ]; then
+  NEXT_NUM=1
+else
+  NEXT_NUM=$((LAST_NUM + 1))
+fi
+
+# Номер без ведущих нулей
+TAG_NAME="${PREFIX}${NEXT_NUM}"
+
+# Создаём АННОТИРОВАННЫЙ тег (нужен для --follow-tags)
+git tag -a "${TAG_NAME}" -m "auto: ${TAG_NAME}"
+
+echo "Created tag ${TAG_NAME}"
+exit 0
