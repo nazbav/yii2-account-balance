@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace yii2tech\balance;
+namespace nazbav\balance;
 
 use Yii;
 use yii\base\Component;
@@ -23,7 +23,7 @@ abstract class Manager extends Component implements ManagerInterface
     /**
      * Категория сообщений i18n для расширения.
      */
-    public const I18N_CATEGORY = 'yii2tech.balance';
+    public const I18N_CATEGORY = 'nazbav.balance';
 
     /**
      * @event TransactionEvent событие перед созданием новой транзакции.
@@ -373,7 +373,7 @@ abstract class Manager extends Component implements ManagerInterface
             'basePath' => dirname(__DIR__) . '/messages',
             'sourceLanguage' => 'xx-XX',
             'fileMap' => [
-                self::I18N_CATEGORY => 'yii2tech.balance.php',
+                self::I18N_CATEGORY => 'nazbav.balance.php',
             ],
         ];
     }

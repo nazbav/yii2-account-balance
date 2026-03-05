@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 
-namespace yii2tech\tests\unit\balance\data;
+namespace nazbav\tests\unit\balance\data;
 
 use yii\db\ActiveRecord;
 

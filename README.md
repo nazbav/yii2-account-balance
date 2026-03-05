@@ -1,14 +1,14 @@
 <p align="center">
-    <a href="https://github.com/yii2tech" target="_blank">
-        <img src="https://avatars2.githubusercontent.com/u/12951949" height="100px" alt="yii2tech">
+    <a href="https://github.com/nazbav" target="_blank">
+        <img src="https://github.com/nazbav.png" height="100px" alt="nazbav">
     </a>
-    <h1 align="center">yii2tech/balance</h1>
+    <h1 align="center">nazbav/yii2-account-balance</h1>
     <p align="center">Расширение для учёта балансов и проводок в Yii2 (PHP 8.1 / 8.3)</p>
 </p>
 
 ## Описание
 
-`yii2tech/balance` реализует модель учёта на принципе дебета/кредита:
+`nazbav/yii2-account-balance` реализует модель учёта на принципе дебета/кредита:
 
 - `счёт` (`account`) хранит текущее состояние ресурса;
 - `транзакция` (`transaction`) фиксирует изменение баланса;
@@ -40,7 +40,7 @@
 ## Установка
 
 ```bash
-composer require yii2tech/balance --prefer-dist
+composer require nazbav/yii2-account-balance --prefer-dist
 ```
 
 ## Архитектура
@@ -86,7 +86,7 @@ sequenceDiagram
 ## Быстрый старт (ManagerDb)
 
 ```php
-use yii2tech\balance\ManagerDb;
+use nazbav\balance\ManagerDb;
 
 return [
     'components' => [
@@ -163,7 +163,7 @@ $manager->transfer(
 - `Manager::EVENT_AFTER_CREATE_TRANSACTION`
 
 ```php
-use yii2tech\balance\Manager;
+use nazbav\balance\Manager;
 
 $manager->on(Manager::EVENT_BEFORE_CREATE_TRANSACTION, static function ($event) {
     $event->transactionData['meta'] = 'Заполнено обработчиком';
@@ -178,14 +178,14 @@ $manager->on(Manager::EVENT_AFTER_CREATE_TRANSACTION, static function ($event) {
 
 В расширении все сообщения исключений переведены на `Yii::t()` и вынесены в отдельный словарь.
 
-Категория: `yii2tech.balance`.
+Категория: `nazbav.balance`.
 
 Файлы переводов:
 
-- `messages/ru/yii2tech.balance.php`
-- `messages/en/yii2tech.balance.php`
+- `messages/ru/nazbav.balance.php`
+- `messages/en/nazbav.balance.php`
 
-Расширение регистрирует источник переводов через bootstrap-класс `yii2tech\balance\Bootstrap` автоматически (через `composer.json` -> `extra.bootstrap`).
+Расширение регистрирует источник переводов через bootstrap-класс `nazbav\balance\Bootstrap` автоматически (через `composer.json` -> `extra.bootstrap`).
 
 ## Пример схемы БД
 

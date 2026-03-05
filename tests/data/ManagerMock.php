@@ -3,12 +3,12 @@
 declare(strict_types=1);
 
 
-namespace yii2tech\tests\unit\balance\data;
+namespace nazbav\tests\unit\balance\data;
 
 /**
  * Тестовый класс-имитатор менеджера.
  */
-class ManagerMock extends \yii2tech\balance\Manager
+class ManagerMock extends \nazbav\balance\Manager
 {
     /**
      * @var array<string, string> список счётов.

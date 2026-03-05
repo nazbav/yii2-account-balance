@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace yii2tech\balance;
+namespace nazbav\balance;
 
 use yii\base\InvalidConfigException;
 use yii\base\InvalidArgumentException;

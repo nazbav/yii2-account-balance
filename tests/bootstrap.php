@@ -14,5 +14,5 @@ $_SERVER['SCRIPT_FILENAME'] = __FILE__;
 require_once(__DIR__ . '/../vendor/autoload.php');
 require_once(__DIR__ . '/../vendor/yiisoft/yii2/Yii.php');
 
-Yii::setAlias('@yii2tech/tests/unit/balance', __DIR__);
-Yii::setAlias('@yii2tech/balance', dirname(__DIR__) . '/src');
+Yii::setAlias('@nazbav/tests/unit/balance', __DIR__);
+Yii::setAlias('@nazbav/yii2-account-balance', dirname(__DIR__) . '/src');

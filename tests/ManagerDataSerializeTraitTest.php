@@ -3,9 +3,9 @@
 declare(strict_types=1);
 
 
-namespace yii2tech\tests\unit\balance;
+namespace nazbav\tests\unit\balance;
 
-use yii2tech\tests\unit\balance\data\ManagerDataSerialize;
+use nazbav\tests\unit\balance\data\ManagerDataSerialize;
 
 class ManagerDataSerializeTraitTest extends TestCase
 {
@@ -29,7 +29,7 @@ class ManagerDataSerializeTraitTest extends TestCase
             ],
             [
                 [
-                    'class' => 'yii2tech\balance\PhpSerializer'
+                    'class' => 'nazbav\balance\PhpSerializer'
                 ]
             ],
         ];
@@ -73,7 +73,7 @@ class ManagerDataSerializeTraitTest extends TestCase
 
     public function testPhpSerializerBlocksObjectInstantiation(): void
     {
-        $serializer = new \yii2tech\balance\PhpSerializer();
+        $serializer = new \nazbav\balance\PhpSerializer();
         $payload = $serializer->serialize(['item' => new \stdClass()]);
 
         $decoded = $serializer->unserialize($payload);
@@ -85,7 +85,7 @@ class ManagerDataSerializeTraitTest extends TestCase
 
     public function testPhpSerializerAllowsConfiguredClasses(): void
     {
-        $serializer = new \yii2tech\balance\PhpSerializer([
+        $serializer = new \nazbav\balance\PhpSerializer([
             'allowedClasses' => [\stdClass::class],
         ]);
         $payload = $serializer->serialize(['item' => new \stdClass()]);

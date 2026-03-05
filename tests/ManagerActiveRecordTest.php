@@ -3,12 +3,12 @@
 declare(strict_types=1);
 
 
-namespace yii2tech\tests\unit\balance;
+namespace nazbav\tests\unit\balance;
 
 use Yii;
-use yii2tech\balance\ManagerActiveRecord;
-use yii2tech\tests\unit\balance\data\BalanceAccount;
-use yii2tech\tests\unit\balance\data\BalanceTransaction;
+use nazbav\balance\ManagerActiveRecord;
+use nazbav\tests\unit\balance\data\BalanceAccount;
+use nazbav\tests\unit\balance\data\BalanceTransaction;
 
 /**
  * @group db

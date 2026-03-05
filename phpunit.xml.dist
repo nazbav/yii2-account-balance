@@ -7,7 +7,7 @@
 		convertWarningsToExceptions="true"
 		stopOnFailure="false">
 		<testsuites>
-			<testsuite name="Yii2tech Test Suite">
+			<testsuite name="Nazbav Account Balance Test Suite">
 				<directory>./tests</directory>
 			</testsuite>
 		</testsuites>

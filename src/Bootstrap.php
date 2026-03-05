@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace yii2tech\balance;
+namespace nazbav\balance;
 
 use yii\base\Application;
 use yii\base\BootstrapInterface;
@@ -29,7 +29,7 @@ class Bootstrap implements BootstrapInterface
             // Искусственный sourceLanguage, чтобы сообщения всегда брались из словаря.
             'sourceLanguage' => 'xx-XX',
             'fileMap' => [
-                Manager::I18N_CATEGORY => 'yii2tech.balance.php',
+                Manager::I18N_CATEGORY => 'nazbav.balance.php',
             ],
         ];
     }

@@ -1,19 +1,19 @@
 {
-    "name": "yii2tech/balance",
-    "description": "Provides support for Balance accounting system based on debit and credit principle",
+    "name": "nazbav/yii2-account-balance",
+    "description": "Расширение Yii2 для учёта баланса по модели дебет/кредит",
     "keywords": ["yii2", "balance", "accounting", "bookkeeping", "debit", "credit"],
     "type": "yii2-extension",
     "license": "BSD-3-Clause",
     "support": {
-        "issues": "https://github.com/yii2tech/balance/issues",
+        "issues": "https://github.com/nazbav/yii2-account-balance/issues",
         "forum": "http://www.yiiframework.com/forum/",
-        "wiki": "https://github.com/yii2tech/balance/wiki",
-        "source": "https://github.com/yii2tech/balance"
+        "wiki": "https://github.com/nazbav/yii2-account-balance/wiki",
+        "source": "https://github.com/nazbav/yii2-account-balance"
     },
     "authors": [
         {
-            "name": "Paul Klimov",
-            "email": "klimov.paul@gmail.com"
+            "name": "Nazbav",
+            "email": "naz.bav@list.ru"
         }
     ],
     "require": {
@@ -27,11 +27,11 @@
         }
     ],
     "autoload": {
-        "psr-4": {"yii2tech\\balance\\": "src"}
+        "psr-4": {"nazbav\\balance\\": "src"}
     },
     "autoload-dev": {
         "psr-4": {
-            "yii2tech\\tests\\unit\\balance\\": "tests"
+            "nazbav\\tests\\unit\\balance\\": "tests"
         }
     },
     "scripts": {
@@ -47,7 +47,7 @@
         ]
     },
     "extra": {
-        "bootstrap": "yii2tech\\balance\\Bootstrap",
+        "bootstrap": "nazbav\\balance\\Bootstrap",
         "branch-alias": {
             "dev-master": "1.0.x-dev"
         }

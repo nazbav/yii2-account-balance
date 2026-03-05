@@ -3,11 +3,11 @@
 declare(strict_types=1);
 
 
-namespace yii2tech\tests\unit\balance;
+namespace nazbav\tests\unit\balance;
 
 use Yii;
 use yii\db\Query;
-use yii2tech\balance\ManagerDb;
+use nazbav\balance\ManagerDb;
 
 /**
  * @group db
@@ -191,7 +191,7 @@ class ManagerDbTest extends TestCase
     }
 
     /**
-     * @see https://github.com/yii2tech/balance/issues/11
+     * @see https://github.com/nazbav/yii2-account-balance/issues/11
      *
      * @depends testIncrease
      */

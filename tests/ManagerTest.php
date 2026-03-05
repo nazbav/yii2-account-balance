@@ -3,11 +3,11 @@
 declare(strict_types=1);
 
 
-namespace yii2tech\tests\unit\balance;
+namespace nazbav\tests\unit\balance;
 
-use yii2tech\balance\Manager;
-use yii2tech\balance\TransactionEvent;
-use yii2tech\tests\unit\balance\data\ManagerMock;
+use nazbav\balance\Manager;
+use nazbav\balance\TransactionEvent;
+use nazbav\tests\unit\balance\data\ManagerMock;
 
 class ManagerTest extends TestCase
 {
