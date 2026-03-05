@@ -1,9 +1,3 @@
-<p align="center">
-  <a href="https://github.com/nazbav" target="_blank">
-    <img src="https://github.com/nazbav.png" height="100px" alt="nazbav">
-  </a>
-</p>
-
 <h1 align="center">nazbav/yii2-account-balance</h1>
 
 <p align="center">
