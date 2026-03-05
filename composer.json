@@ -17,6 +17,7 @@
         }
     ],
     "require": {
+        "php": "^8.1",
         "yiisoft/yii2": "~2.0.14"
     },
     "repositories": [
@@ -27,6 +28,23 @@
     ],
     "autoload": {
         "psr-4": {"yii2tech\\balance\\": "src"}
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "yii2tech\\tests\\unit\\balance\\": "tests"
+        }
+    },
+    "scripts": {
+        "test": "phpunit -c phpunit.xml.dist",
+        "analyse": "phpstan analyse -c phpstan.neon --no-progress",
+        "security:audit": "composer audit --locked",
+        "security:taint": "psalm --taint-analysis --no-cache --output-format=console",
+        "qa": [
+            "@test",
+            "@analyse",
+            "@security:audit",
+            "@security:taint"
+        ]
     },
     "extra": {
         "branch-alias": {
