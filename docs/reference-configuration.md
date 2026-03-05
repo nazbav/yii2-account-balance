@@ -1,4 +1,4 @@
-# Reference: Параметры И Контракты
+# Справочник: параметры и контракты
 
 ## Базовый интерфейс
 
@@ -120,6 +120,6 @@ $manager->on(Manager::EVENT_BEFORE_CREATE_TRANSACTION, static function ($event) 
 ## Типовые исключения
 
 - `yii\base\InvalidArgumentException`
-  - неверная сумма, self-transfer, отсутствие транзакции и т.д.
+  - неверная сумма, перевод на тот же счёт, отсутствие транзакции и т.д.
 - `yii\base\InvalidConfigException`
   - неверные классы/таблицы/колонки и ошибки конфигурации защиты.

@@ -11,7 +11,7 @@
   Подходит для кошельков, бонусов, уровней лояльности, реферальных наград и внутренних расчётов.
 </p>
 
-## Что Это
+## Что это
 
 `nazbav/yii2-account-balance` даёт прикладной слой для безопасных операций:
 
@@ -38,7 +38,7 @@
 composer require nazbav/yii2-account-balance --prefer-dist
 ```
 
-## Быстрый Старт
+## Быстрый старт
 
 ```php
 use nazbav\balance\ManagerDb;
@@ -77,17 +77,17 @@ $pair = $manager->transfer(10, 20, 250, ['orderId' => 777]);
 $manager->revert($pair[0], ['reason' => 'Отмена операции']);
 ```
 
-## Полная Документация
+## Полная документация
 
-- [Навигация По Докам](docs/README.md)
-- [Tutorial: Быстрый Старт И Базовая Интеграция](docs/tutorial-quick-start.md)
-- [How-to: Уровни И Программы Лояльности](docs/howto-loyalty-levels.md)
-- [How-to: Реферальная Программа](docs/howto-referral-program.md)
-- [Сложные Примеры: Начисления, Холды, Возвраты, Уровни](docs/examples-advanced-scenarios.md)
-- [Reference: Параметры И Контракты](docs/reference-configuration.md)
-- [Explanation: Риски, Антифрод И Защита Бизнес-Логики](docs/explanation-fraud-controls.md)
+- [Навигация по документации](docs/README.md)
+- [Руководство: быстрый старт и базовая интеграция](docs/tutorial-quick-start.md)
+- [Практика: уровни и программы лояльности](docs/howto-loyalty-levels.md)
+- [Практика: реферальная программа](docs/howto-referral-program.md)
+- [Сложные примеры: начисления, холды, возвраты, уровни](docs/examples-advanced-scenarios.md)
+- [Справочник: параметры и контракты](docs/reference-configuration.md)
+- [Разбор: риски, антифрод и защита бизнес-логики](docs/explanation-fraud-controls.md)
 
-## Отдельно Про Рефералку
+## Отдельно о реферальной программе
 
 В документации добавлен отдельный прикладной кейс реферальной программы:
 
@@ -97,7 +97,7 @@ $manager->revert($pair[0], ['reason' => 'Отмена операции']);
 - лимиты наград на период;
 - ручная проверка спорных кейсов.
 
-См. [How-to: Реферальная Программа](docs/howto-referral-program.md).
+См. [Практика: реферальная программа](docs/howto-referral-program.md).
 
 ## Архитектура
 
@@ -136,13 +136,13 @@ classDiagram
 Базовые меры в библиотеке:
 
 - операции записи выполняются в транзакции;
-- проверка суммы (`requirePositiveAmount`), запрет `self-transfer`;
+- проверка суммы (`requirePositiveAmount`), запрет перевода на тот же счёт;
 - защита от перерасхода через `forbidNegativeBalance` и `minimumAllowedBalance`;
 - атомарные обновления баланса в `ManagerDb`/`ManagerActiveRecord`;
 - безопасная сериализация (по умолчанию защита от внедрения объектов);
 - статический анализ (`phpstan`), taint-анализ (`psalm`), проверка зависимостей.
 
-Подробно: [Explanation: Риски, Антифрод И Защита Бизнес-Логики](docs/explanation-fraud-controls.md).
+Подробно: [Разбор: риски, антифрод и защита бизнес-логики](docs/explanation-fraud-controls.md).
 
 ## Проверки
 
