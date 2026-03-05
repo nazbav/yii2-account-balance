@@ -25,7 +25,7 @@ class Bootstrap implements BootstrapInterface
 
         $app->i18n->translations[Manager::I18N_CATEGORY] = [
             'class' => PhpMessageSource::class,
-            'basePath' => '@yii2tech/balance/messages',
+            'basePath' => dirname(__DIR__) . '/messages',
             // Искусственный sourceLanguage, чтобы сообщения всегда брались из словаря.
             'sourceLanguage' => 'xx-XX',
             'fileMap' => [

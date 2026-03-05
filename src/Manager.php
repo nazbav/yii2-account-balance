@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace yii2tech\balance;
 
+use Yii;
 use yii\base\Component;
 use yii\base\InvalidArgumentException;
+use yii\base\InvalidConfigException;
 use yii\helpers\VarDumper;
 use yii\i18n\PhpMessageSource;
 
@@ -69,6 +71,26 @@ abstract class Manager extends Component implements ManagerInterface
     public mixed $dateAttributeValue = null;
 
     /**
+     * @var bool требовать положительную сумму во всех публичных операциях.
+     */
+    public bool $requirePositiveAmount = true;
+
+    /**
+     * @var bool запрещать перевод между одинаковыми счетами.
+     */
+    public bool $forbidTransferToSameAccount = true;
+
+    /**
+     * @var bool запрещать уход баланса ниже установленного порога.
+     */
+    public bool $forbidNegativeBalance = false;
+
+    /**
+     * @var int|float минимально допустимый баланс, если включён запрет отрицательного баланса.
+     */
+    public int|float $minimumAllowedBalance = 0;
+
+    /**
      * Возвращает локализованное сообщение расширения.
      *
      * @param array<string, mixed> $params
@@ -77,44 +99,39 @@ abstract class Manager extends Component implements ManagerInterface
     {
         self::ensureI18nCategory();
 
-        return \Yii::t(self::I18N_CATEGORY, $key, $params);
+        return Yii::t(self::I18N_CATEGORY, $key, $params);
     }
 
     /**
      * @param mixed $account
      * @param int|float $amount
      * @param array<string, mixed> $data
+     * @return mixed
      */
     public function increase(mixed $account, int|float $amount, array $data = []): mixed
     {
-        $accountId = $this->fetchAccountId($account);
-
-        if (!isset($data[$this->dateAttribute])) {
-            $data[$this->dateAttribute] = $this->getDateAttributeValue();
+        $normalizedAmount = $this->normalizeAmount($amount);
+        if ($this->requirePositiveAmount) {
+            $this->assertRequestedAmountIsPositive($normalizedAmount);
         }
-        $data[$this->amountAttribute] = $amount;
-        $data[$this->accountLinkAttribute] = $accountId;
 
-        $data = $this->beforeCreateTransaction($accountId, $data);
-
-        if ($this->accountBalanceAttribute !== null) {
-            $this->incrementAccountBalance($accountId, $this->normalizeAmount($data[$this->amountAttribute]));
-        }
-        $transactionId = $this->createTransaction($data);
-
-        $this->afterCreateTransaction($transactionId, $accountId, $data);
-
-        return $transactionId;
+        return $this->createSignedTransaction($account, $normalizedAmount, $data);
     }
 
     /**
      * @param mixed $account
      * @param int|float $amount
      * @param array<string, mixed> $data
+     * @return mixed
      */
     public function decrease(mixed $account, int|float $amount, array $data = []): mixed
     {
-        return $this->increase($account, -$amount, $data);
+        $normalizedAmount = $this->normalizeAmount($amount);
+        if ($this->requirePositiveAmount) {
+            $this->assertRequestedAmountIsPositive($normalizedAmount);
+        }
+
+        return $this->createSignedTransaction($account, -$normalizedAmount, $data);
     }
 
     /**
@@ -126,8 +143,16 @@ abstract class Manager extends Component implements ManagerInterface
      */
     public function transfer(mixed $from, mixed $to, int|float $amount, array $data = []): array
     {
+        $normalizedAmount = $this->normalizeAmount($amount);
+        if ($this->requirePositiveAmount) {
+            $this->assertRequestedAmountIsPositive($normalizedAmount);
+        }
+
         $fromId = $this->fetchAccountId($from);
         $toId = $this->fetchAccountId($to);
+        if ($this->forbidTransferToSameAccount && $this->isSameAccount($fromId, $toId)) {
+            throw new InvalidArgumentException(self::t('error.transfer_same_account_forbidden'));
+        }
 
         $data[$this->dateAttribute] = $this->getDateAttributeValue();
         $fromData = $data;
@@ -139,8 +164,8 @@ abstract class Manager extends Component implements ManagerInterface
         }
 
         return [
-            $this->decrease($fromId, $amount, $fromData),
-            $this->increase($toId, $amount, $toData),
+            $this->decrease($fromId, $normalizedAmount, $fromData),
+            $this->increase($toId, $normalizedAmount, $toData),
         ];
     }
 
@@ -161,13 +186,21 @@ abstract class Manager extends Component implements ManagerInterface
         $amount = $this->normalizeAmount($transaction[$this->amountAttribute]);
 
         if ($this->extraAccountLinkAttribute !== null && isset($transaction[$this->extraAccountLinkAttribute])) {
-            $fromId = $transaction[$this->accountLinkAttribute];
-            $toId = $transaction[$this->extraAccountLinkAttribute];
+            $accountId = $transaction[$this->accountLinkAttribute];
+            $extraAccountId = $transaction[$this->extraAccountLinkAttribute];
+            $absoluteAmount = abs($amount);
 
-            return $this->transfer($fromId, $toId, $amount, $data);
+            if ($amount < 0) {
+                return $this->transfer($extraAccountId, $accountId, $absoluteAmount, $data);
+            }
+
+            return $this->transfer($accountId, $extraAccountId, $absoluteAmount, $data);
         }
 
         $accountId = $transaction[$this->accountLinkAttribute];
+        if ($amount < 0) {
+            return $this->increase($accountId, abs($amount), $data);
+        }
 
         return $this->decrease($accountId, $amount, $data);
     }
@@ -219,6 +252,37 @@ abstract class Manager extends Component implements ManagerInterface
 
     abstract protected function incrementAccountBalance(mixed $accountId, int|float $amount): void;
 
+    /**
+     * @param mixed $account
+     * @param int|float $signedAmount
+     * @param array<string, mixed> $data
+     * @throws InvalidConfigException
+     */
+    protected function createSignedTransaction(mixed $account, int|float $signedAmount, array $data = []): mixed
+    {
+        $accountId = $this->fetchAccountId($account);
+
+        if (!isset($data[$this->dateAttribute])) {
+            $data[$this->dateAttribute] = $this->getDateAttributeValue();
+        }
+        $data[$this->amountAttribute] = $signedAmount;
+        $data[$this->accountLinkAttribute] = $accountId;
+
+        $data = $this->beforeCreateTransaction($accountId, $data);
+
+        if ($this->accountBalanceAttribute !== null) {
+            $this->incrementAccountBalance($accountId, $this->normalizeAmount($data[$this->amountAttribute]));
+        } elseif ($this->forbidNegativeBalance && $signedAmount < 0) {
+            throw new InvalidConfigException(self::t('error.account_balance_attribute_required_for_negative_protection'));
+        }
+
+        $transactionId = $this->createTransaction($data);
+
+        $this->afterCreateTransaction($transactionId, $accountId, $data);
+
+        return $transactionId;
+    }
+
     protected function getDateAttributeValue(): mixed
     {
         if ($this->dateAttributeValue === null) {
@@ -245,6 +309,25 @@ abstract class Manager extends Component implements ManagerInterface
         }
 
         throw new InvalidArgumentException(self::t('error.amount_not_numeric'));
+    }
+
+    /**
+     * @throws InvalidArgumentException
+     */
+    protected function assertRequestedAmountIsPositive(int|float $amount): void
+    {
+        if (is_float($amount) && !is_finite($amount)) {
+            throw new InvalidArgumentException(self::t('error.amount_must_be_finite'));
+        }
+
+        if ($amount <= 0) {
+            throw new InvalidArgumentException(self::t('error.amount_must_be_positive'));
+        }
+    }
+
+    protected function isSameAccount(mixed $firstAccountId, mixed $secondAccountId): bool
+    {
+        return (string) $firstAccountId === (string) $secondAccountId;
     }
 
     /**
@@ -280,17 +363,14 @@ abstract class Manager extends Component implements ManagerInterface
 
     private static function ensureI18nCategory(): void
     {
-        if (!isset(\Yii::$app->i18n)) {
+        $i18n = Yii::$app->getI18n();
+        if (isset($i18n->translations[self::I18N_CATEGORY])) {
             return;
         }
 
-        if (isset(\Yii::$app->i18n->translations[self::I18N_CATEGORY])) {
-            return;
-        }
-
-        \Yii::$app->i18n->translations[self::I18N_CATEGORY] = [
+        $i18n->translations[self::I18N_CATEGORY] = [
             'class' => PhpMessageSource::class,
-            'basePath' => '@yii2tech/balance/messages',
+            'basePath' => dirname(__DIR__) . '/messages',
             'sourceLanguage' => 'xx-XX',
             'fileMap' => [
                 self::I18N_CATEGORY => 'yii2tech.balance.php',

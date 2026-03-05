@@ -5,11 +5,14 @@ declare(strict_types=1);
 namespace yii2tech\balance;
 
 use yii\base\InvalidConfigException;
+use yii\base\InvalidArgumentException;
 use yii\base\NotSupportedException;
 use yii\db\ActiveRecord;
 use yii\db\ActiveQuery;
 use yii\db\BaseActiveRecord;
+use yii\db\Expression;
 use yii\db\Exception;
+use yii\db\TableSchema;
 use yii\db\Transaction;
 
 /**
@@ -70,7 +73,7 @@ class ManagerActiveRecord extends ManagerDbTransaction
     {
         $class = $this->ensureActiveRecordClass($this->accountClass, 'accountClass');
         $model = new $class();
-        $model->setAttributes($attributes, false);
+        $model->setAttributes($this->filterWritableAttributes($model, $attributes), false);
         $model->save(false);
 
         return $model->getPrimaryKey();
@@ -86,7 +89,8 @@ class ManagerActiveRecord extends ManagerDbTransaction
     {
         $class = $this->ensureActiveRecordClass($this->transactionClass, 'transactionClass');
         $model = new $class();
-        $model->setAttributes($this->serializeAttributes($attributes, $model->attributes()), false);
+        $allowedAttributes = $this->detectWritableAttributeNames($model);
+        $model->setAttributes($this->serializeAttributes($attributes, $allowedAttributes), false);
         $model->save(false);
 
         return $model->getPrimaryKey();
@@ -105,7 +109,39 @@ class ManagerActiveRecord extends ManagerDbTransaction
             throw new InvalidConfigException(Manager::t('error.account_class_pk_required'));
         }
 
-        $class::updateAllCounters([$this->accountBalanceAttribute => $amount], [$primaryKey => $accountId]);
+        if ($this->accountBalanceAttribute === null) {
+            return;
+        }
+
+        $db = $class::getDb();
+        $balanceColumn = $this->ensureSafeColumnName($this->accountBalanceAttribute);
+        $accountIdColumn = $this->ensureSafeColumnName($primaryKey);
+        $quotedBalanceColumn = $db->quoteColumnName($balanceColumn);
+        $quotedAccountIdColumn = $db->quoteColumnName($accountIdColumn);
+        $balanceExpression = new Expression("$quotedBalanceColumn + :amount", ['amount' => $amount]);
+        $condition = "$quotedAccountIdColumn = :accountId";
+        $params = [
+            'accountId' => $accountId,
+            'amount' => $amount,
+        ];
+
+        if ($this->forbidNegativeBalance && $amount < 0) {
+            $condition .= " AND $quotedBalanceColumn + :amount >= :minimumBalance";
+            $params['minimumBalance'] = $this->normalizeAmount($this->minimumAllowedBalance);
+        }
+
+        $affectedRows = $class::getDb()->createCommand()->update(
+            $class::tableName(),
+            [$balanceColumn => $balanceExpression],
+            $condition,
+            $params
+        )->execute();
+        if ($this->forbidNegativeBalance && $amount < 0 && $affectedRows === 0) {
+            throw new InvalidArgumentException(self::t('error.insufficient_funds', [
+                'accountId' => (string) $accountId,
+                'minimumBalance' => (string) $this->minimumAllowedBalance,
+            ]));
+        }
     }
 
     /**
@@ -145,19 +181,76 @@ class ManagerActiveRecord extends ManagerDbTransaction
     }
 
     /**
-     * @param class-string<BaseActiveRecord>|string $className
-     * @return class-string<BaseActiveRecord>
+     * @param class-string<ActiveRecord>|string $className
+     * @return class-string<ActiveRecord>
      * @throws InvalidConfigException
      * @throws InvalidConfigException
      */
     private function ensureActiveRecordClass(string $className, string $propertyName): string
     {
-        if ($className === '' || !is_subclass_of($className, BaseActiveRecord::class)) {
+        if ($className === '' || !is_subclass_of($className, ActiveRecord::class)) {
             throw new InvalidConfigException(Manager::t('error.property_must_be_active_record_class', [
                 'property' => $propertyName,
             ]));
         }
 
         return $className;
+    }
+
+    /**
+     * @param array<string, mixed> $attributes
+     * @return array<string, mixed>
+     * @throws InvalidConfigException
+     */
+    private function filterWritableAttributes(ActiveRecord $model, array $attributes): array
+    {
+        $allowedAttributes = $this->detectWritableAttributeNames($model);
+        $filteredAttributes = [];
+
+        foreach ($attributes as $name => $value) {
+            if (in_array($name, $allowedAttributes, true)) {
+                $filteredAttributes[$name] = $value;
+            }
+        }
+
+        return $filteredAttributes;
+    }
+
+    /**
+     * @return array<int, string>
+     * @throws InvalidConfigException
+     */
+    private function detectWritableAttributeNames(ActiveRecord $model): array
+    {
+        $allowedAttributes = $model->attributes();
+        $schema = $model::getDb()->getTableSchema($model::tableName());
+        if (!$schema instanceof TableSchema) {
+            return $allowedAttributes;
+        }
+
+        foreach ($schema->columns as $column) {
+            if ($column->isPrimaryKey && $column->autoIncrement) {
+                $allowedAttributes = array_values(array_filter(
+                    $allowedAttributes,
+                    static fn (string $attributeName): bool => $attributeName !== $column->name
+                ));
+            }
+        }
+
+        return $allowedAttributes;
+    }
+
+    /**
+     * @throws InvalidConfigException
+     */
+    private function ensureSafeColumnName(string $columnName): string
+    {
+        if (!preg_match('/^[A-Za-z_][A-Za-z0-9_]*$/', $columnName)) {
+            throw new InvalidConfigException(self::t('error.invalid_column_name', [
+                'column' => $columnName,
+            ]));
+        }
+
+        return $columnName;
     }
 }

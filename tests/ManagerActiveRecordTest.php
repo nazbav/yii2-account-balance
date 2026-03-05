@@ -151,6 +151,47 @@ class ManagerActiveRecordTest extends TestCase
         $this->assertEquals(-$amount, $transaction['amount']);
     }
 
+    public function testTransferRejectsSameAccount()
+    {
+        $manager = $this->createManager();
+
+        $this->expectException('yii\base\InvalidArgumentException');
+        $manager->transfer(1, 1, 10);
+    }
+
+    public function testForbidNegativeBalance()
+    {
+        $manager = $this->createManager();
+        $manager->autoCreateAccount = true;
+        $manager->accountBalanceAttribute = 'balance';
+        $manager->forbidNegativeBalance = true;
+        $manager->minimumAllowedBalance = 0;
+
+        $manager->increase(['userId' => 100], 30);
+
+        try {
+            $manager->decrease(['userId' => 100], 50);
+            $this->fail('Ожидалось исключение о недостатке средств.');
+        } catch (\yii\base\InvalidArgumentException $e) {
+            $this->assertStringContainsString('Недостаточно средств', $e->getMessage());
+        }
+
+        $account = BalanceAccount::find()->andWhere(['userId' => 100])->one();
+        $this->assertNotNull($account);
+        $this->assertEquals(30, $account['balance']);
+    }
+
+    public function testSkipAutoIncrementPrimaryKeyInActiveRecord()
+    {
+        $manager = $this->createManager();
+
+        $manager->increase(1, 10, ['id' => 9999999]);
+        $transaction = $this->getLastTransaction();
+
+        $this->assertNotEquals(9999999, $transaction['id']);
+        $this->assertStringContainsString('9999999', $transaction['data']);
+    }
+
     /**
      * @depends testIncrease
      */

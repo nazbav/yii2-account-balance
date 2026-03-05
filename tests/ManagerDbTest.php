@@ -146,6 +146,36 @@ class ManagerDbTest extends TestCase
         $this->assertEquals(-$amount, $transaction['amount']);
     }
 
+    public function testTransferRejectsSameAccount()
+    {
+        $manager = new ManagerDb();
+
+        $this->expectException('yii\base\InvalidArgumentException');
+        $manager->transfer(1, 1, 10);
+    }
+
+    public function testForbidNegativeBalance()
+    {
+        $manager = new ManagerDb();
+        $manager->autoCreateAccount = true;
+        $manager->accountBalanceAttribute = 'balance';
+        $manager->forbidNegativeBalance = true;
+        $manager->minimumAllowedBalance = 0;
+
+        $manager->increase(['userId' => 100], 30);
+
+        try {
+            $manager->decrease(['userId' => 100], 50);
+            $this->fail('Ожидалось исключение о недостатке средств.');
+        } catch (\yii\base\InvalidArgumentException $e) {
+            $this->assertStringContainsString('Недостаточно средств', $e->getMessage());
+        }
+
+        $account = (new Query())->from('BalanceAccount')->andWhere(['userId' => 100])->one();
+        $this->assertIsArray($account);
+        $this->assertEquals(30, $account['balance']);
+    }
+
     /**
      * @depends testIncrease
      */

@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace yii2tech\balance;
 
 use yii\base\InvalidConfigException;
+use yii\base\InvalidArgumentException;
+use yii\base\NotSupportedException;
 use yii\db\Connection;
+use yii\db\Exception;
 use yii\db\Expression;
 use yii\db\Query;
 use yii\db\TableSchema;
@@ -43,12 +46,18 @@ class ManagerDb extends ManagerDbTransaction
     private ?string $_accountIdAttribute = null;
     private ?string $_transactionIdAttribute = null;
 
+    /**
+     * @throws InvalidConfigException
+     */
     public function init(): void
     {
         parent::init();
         $this->db = $this->getDbConnection();
     }
 
+    /**
+     * @throws InvalidConfigException
+     */
     public function getAccountIdAttribute(): string
     {
         if ($this->_accountIdAttribute === null) {
@@ -63,6 +72,9 @@ class ManagerDb extends ManagerDbTransaction
         $this->_accountIdAttribute = $accountIdAttribute;
     }
 
+    /**
+     * @throws InvalidConfigException
+     */
     public function getTransactionIdAttribute(): string
     {
         if ($this->_transactionIdAttribute === null) {
@@ -79,8 +91,9 @@ class ManagerDb extends ManagerDbTransaction
 
     /**
      * @param array<string, mixed> $attributes
+     * @throws InvalidConfigException
      */
-    protected function findAccountId(array $attributes): mixed
+    protected function findAccountId(array $attributes): string|int|null
     {
         $id = (new Query())
             ->select([$this->getAccountIdAttribute()])
@@ -91,6 +104,9 @@ class ManagerDb extends ManagerDbTransaction
         return $id === false ? null : $id;
     }
 
+    /**
+     * @throws InvalidConfigException
+     */
     protected function findTransaction(mixed $id): ?array
     {
         $row = (new Query())
@@ -107,6 +123,9 @@ class ManagerDb extends ManagerDbTransaction
 
     /**
      * @param array<string, mixed> $attributes
+     * @throws InvalidConfigException
+     * @throws NotSupportedException
+     * @throws InvalidConfigException
      */
     protected function createAccount(array $attributes): mixed
     {
@@ -120,6 +139,10 @@ class ManagerDb extends ManagerDbTransaction
 
     /**
      * @param array<string, mixed> $attributes
+     * @throws InvalidConfigException
+     * @throws NotSupportedException
+     * @throws InvalidConfigException
+     * @throws InvalidConfigException
      */
     protected function createTransaction(array $attributes): mixed
     {
@@ -140,18 +163,54 @@ class ManagerDb extends ManagerDbTransaction
         return count($primaryKeys) > 1 ? implode(',', $primaryKeys) : array_shift($primaryKeys);
     }
 
+    /**
+     * @throws Exception
+     * @throws InvalidConfigException
+     */
     protected function incrementAccountBalance(mixed $accountId, int|float $amount): void
     {
         if ($this->accountBalanceAttribute === null) {
             return;
         }
 
-        $value = new Expression("[[{$this->accountBalanceAttribute}]]+:amount", ['amount' => $amount]);
-        $this->getDbConnection()->createCommand()
-            ->update($this->accountTable, [$this->accountBalanceAttribute => $value], [$this->getAccountIdAttribute() => $accountId])
-            ->execute();
+        $balanceColumn = $this->ensureSafeColumnName($this->accountBalanceAttribute);
+        $accountIdColumn = $this->ensureSafeColumnName($this->getAccountIdAttribute());
+        $quotedBalanceColumn = $this->getDbConnection()->quoteColumnName($balanceColumn);
+        $quotedAccountIdColumn = $this->getDbConnection()->quoteColumnName($accountIdColumn);
+        $balanceExpression = new Expression("$quotedBalanceColumn + :amount", ['amount' => $amount]);
+
+        if ($this->forbidNegativeBalance && $amount < 0) {
+            $affectedRows = $this->getDbConnection()->createCommand()->update(
+                $this->accountTable,
+                [$balanceColumn => $balanceExpression],
+                "$quotedAccountIdColumn = :accountId AND $quotedBalanceColumn + :amount >= :minimumBalance",
+                [
+                    'accountId' => $accountId,
+                    'amount' => $amount,
+                    'minimumBalance' => $this->normalizeAmount($this->minimumAllowedBalance),
+                ]
+            )->execute();
+
+            if ($affectedRows === 0) {
+                throw new InvalidArgumentException(self::t('error.insufficient_funds', [
+                    'accountId' => (string) $accountId,
+                    'minimumBalance' => (string) $this->minimumAllowedBalance,
+                ]));
+            }
+
+            return;
+        }
+
+        $this->getDbConnection()->createCommand()->update(
+            $this->accountTable,
+            [$balanceColumn => $balanceExpression],
+            [$accountIdColumn => $accountId]
+        )->execute();
     }
 
+    /**
+     * @throws InvalidConfigException
+     */
     public function calculateBalance(mixed $account): int|float|null
     {
         $accountId = $this->fetchAccountId($account);
@@ -163,6 +222,9 @@ class ManagerDb extends ManagerDbTransaction
         return $balance === null ? null : $this->normalizeAmount($balance);
     }
 
+    /**
+     * @throws InvalidConfigException
+     */
     protected function createDbTransaction(): ?Transaction
     {
         $db = $this->getDbConnection();
@@ -173,6 +235,9 @@ class ManagerDb extends ManagerDbTransaction
         return $db->beginTransaction();
     }
 
+    /**
+     * @throws InvalidConfigException
+     */
     protected function getDbConnection(): Connection
     {
         if (!$this->db instanceof Connection) {
@@ -184,6 +249,9 @@ class ManagerDb extends ManagerDbTransaction
         return $this->db;
     }
 
+    /**
+     * @throws InvalidConfigException
+     */
     private function getRequiredTableSchema(string $tableName): TableSchema
     {
         $schema = $this->getDbConnection()->getTableSchema($tableName);
@@ -196,6 +264,9 @@ class ManagerDb extends ManagerDbTransaction
         return $schema;
     }
 
+    /**
+     * @throws InvalidConfigException
+     */
     private function detectPrimaryKey(string $tableName): string
     {
         $primaryKeys = $this->getRequiredTableSchema($tableName)->primaryKey;
@@ -207,5 +278,19 @@ class ManagerDb extends ManagerDbTransaction
         }
 
         return $primaryKey;
+    }
+
+    /**
+     * @throws InvalidConfigException
+     */
+    private function ensureSafeColumnName(string $columnName): string
+    {
+        if (!preg_match('/^[A-Za-z_][A-Za-z0-9_]*$/', $columnName)) {
+            throw new InvalidConfigException(self::t('error.invalid_column_name', [
+                'column' => $columnName,
+            ]));
+        }
+
+        return $columnName;
     }
 }

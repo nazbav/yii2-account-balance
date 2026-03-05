@@ -36,6 +36,30 @@ class ManagerTest extends TestCase
         $this->assertEquals(-50, $transaction['amount']);
     }
 
+    public function testIncreaseRejectsNonPositiveAmount()
+    {
+        $manager = new ManagerMock();
+
+        $this->expectException('yii\base\InvalidArgumentException');
+        $manager->increase(1, 0);
+    }
+
+    public function testIncreaseRejectsInfiniteAmount()
+    {
+        $manager = new ManagerMock();
+
+        $this->expectException('yii\base\InvalidArgumentException');
+        $manager->increase(1, INF);
+    }
+
+    public function testDecreaseRejectsNonPositiveAmount()
+    {
+        $manager = new ManagerMock();
+
+        $this->expectException('yii\base\InvalidArgumentException');
+        $manager->decrease(1, -10);
+    }
+
     /**
      * @depends testIncrease
      */
@@ -51,6 +75,14 @@ class ManagerTest extends TestCase
         $manager->transfer(1, 2, 10, ['extra' => 'custom']);
         $transaction = $manager->getLastTransaction();
         $this->assertEquals('custom', $transaction['extra']);
+    }
+
+    public function testTransferRejectsSameAccount()
+    {
+        $manager = new ManagerMock();
+
+        $this->expectException('yii\base\InvalidArgumentException');
+        $manager->transfer(10, 10, 5);
     }
 
     /**
@@ -151,6 +183,28 @@ class ManagerTest extends TestCase
 
         $this->assertEquals(0, $manager->accountBalances[$fromId]);
         $this->assertEquals(0, $manager->accountBalances[$toId]);
+    }
+
+    public function testRevertDecreaseTransaction()
+    {
+        $manager = new ManagerMock();
+        $manager->accountBalanceAttribute = 'balance';
+
+        $accountId = 3;
+        $manager->increase($accountId, 50);
+        $decreaseTransactionId = $manager->decrease($accountId, 10);
+        $manager->revert($decreaseTransactionId);
+
+        $this->assertEquals(50, $manager->accountBalances[$accountId]);
+    }
+
+    public function testForbidNegativeBalanceRequiresBalanceAttribute()
+    {
+        $manager = new ManagerMock();
+        $manager->forbidNegativeBalance = true;
+
+        $this->expectException('yii\base\InvalidConfigException');
+        $manager->decrease(1, 1);
     }
 
     /**
