@@ -92,7 +92,7 @@ class ManagerActiveRecord extends ManagerDbTransaction
         $primaryKeys = $class::primaryKey();
         $primaryKey = array_shift($primaryKeys);
         if ($primaryKey === null) {
-            throw new InvalidConfigException('Класс счёта должен иметь первичный ключ.');
+            throw new InvalidConfigException(\Yii::t(Manager::I18N_CATEGORY, 'error.account_class_pk_required'));
         }
 
         $class::updateAllCounters([$this->accountBalanceAttribute => $amount], [$primaryKey => $accountId]);
@@ -135,7 +135,9 @@ class ManagerActiveRecord extends ManagerDbTransaction
     private function ensureActiveRecordClass(string $className, string $propertyName): string
     {
         if ($className === '' || !is_subclass_of($className, BaseActiveRecord::class)) {
-            throw new InvalidConfigException("Свойство \"{$propertyName}\" должно содержать класс ActiveRecord.");
+            throw new InvalidConfigException(\Yii::t(Manager::I18N_CATEGORY, 'error.property_must_be_active_record_class', [
+                'property' => $propertyName,
+            ]));
         }
 
         return $className;

@@ -25,6 +25,11 @@ use yii\helpers\VarDumper;
 abstract class Manager extends Component implements ManagerInterface
 {
     /**
+     * Категория сообщений i18n для расширения.
+     */
+    public const I18N_CATEGORY = 'yii2tech.balance';
+
+    /**
      * @event TransactionEvent an event raised before creating new transaction.
      */
     public const EVENT_BEFORE_CREATE_TRANSACTION = 'beforeCreateTransaction';
@@ -142,7 +147,9 @@ abstract class Manager extends Component implements ManagerInterface
     {
         $transaction = $this->findTransaction($transactionId);
         if (empty($transaction)) {
-            throw new InvalidArgumentException("Unable to find transaction '{$transactionId}'");
+            throw new InvalidArgumentException(\Yii::t(self::I18N_CATEGORY, 'error.transaction_not_found', [
+                'id' => (string) $transactionId,
+            ]));
         }
 
         $amount = $this->normalizeAmount($transaction[$this->amountAttribute]);
@@ -171,7 +178,9 @@ abstract class Manager extends Component implements ManagerInterface
                     $accountId = $this->createAccount($idOrFilter);
                 } else {
                     throw new InvalidArgumentException(
-                        'Unable to find account matching filter: ' . VarDumper::export($idOrFilter)
+                        \Yii::t(self::I18N_CATEGORY, 'error.account_not_found_by_filter', [
+                            'filter' => VarDumper::export($idOrFilter),
+                        ])
                     );
                 }
             }
@@ -229,7 +238,7 @@ abstract class Manager extends Component implements ManagerInterface
             return str_contains((string) $amount, '.') ? (float) $amount : (int) $amount;
         }
 
-        throw new InvalidArgumentException('Amount must be a numeric value.');
+        throw new InvalidArgumentException(\Yii::t(self::I18N_CATEGORY, 'error.amount_not_numeric'));
     }
 
     /**

@@ -1,262 +1,253 @@
 <p align="center">
     <a href="https://github.com/yii2tech" target="_blank">
-        <img src="https://avatars2.githubusercontent.com/u/12951949" height="100px">
+        <img src="https://avatars2.githubusercontent.com/u/12951949" height="100px" alt="yii2tech">
     </a>
-    <h1 align="center">Balance Accounting System extension for Yii2</h1>
-    <br>
+    <h1 align="center">yii2tech/balance</h1>
+    <p align="center">Расширение для учёта балансов и проводок в Yii2 (PHP 8.1 / 8.3)</p>
 </p>
 
-This extension provides basic support for balance accounting (bookkeeping) system based on [debit and credit](https://en.wikipedia.org/wiki/Debits_and_credits) principle.
+## Описание
 
-For license information check the [LICENSE](LICENSE.md)-file.
+`yii2tech/balance` реализует модель учёта на принципе дебета/кредита:
 
-[![Latest Stable Version](https://poser.pugx.org/yii2tech/balance/v/stable.png)](https://packagist.org/packages/yii2tech/balance)
-[![Total Downloads](https://poser.pugx.org/yii2tech/balance/downloads.png)](https://packagist.org/packages/yii2tech/balance)
-[![Build Status](https://travis-ci.org/yii2tech/balance.svg?branch=master)](https://travis-ci.org/yii2tech/balance)
+- `счёт` (`account`) хранит текущее состояние ресурса;
+- `транзакция` (`transaction`) фиксирует изменение баланса;
+- перевод между счетами создаёт две транзакции: списание и зачисление.
 
+Расширение подходит для:
 
-Installation
-------------
+- денежных операций;
+- бонусных/балльных систем;
+- складских и внутренних учётных перемещений.
 
-The preferred way to install this extension is through [composer](http://getcomposer.org/download/).
+## Возможности
 
-Either run
+- операции `increase()`, `decrease()`, `transfer()`, `revert()`;
+- автоматическое создание счёта по фильтру (`autoCreateAccount`);
+- вычисление текущего баланса (`calculateBalance()`);
+- хранение дополнительных данных транзакции с сериализацией;
+- поддержка хранилищ:
+  - `ManagerDb` (прямой SQL через Query/Command),
+  - `ManagerActiveRecord` (через ActiveRecord);
+- транзакционность операций через `ManagerDbTransaction`;
+- события до и после создания транзакции.
 
+## Требования
+
+- PHP `^8.1` (проверено на `8.1` и `8.3`);
+- Yii2 `~2.0.14`.
+
+## Установка
+
+```bash
+composer require yii2tech/balance --prefer-dist
 ```
-php composer.phar require --prefer-dist yii2tech/balance
+
+## Архитектура
+
+```mermaid
+classDiagram
+    class ManagerInterface {
+      +increase(account, amount, data)
+      +decrease(account, amount, data)
+      +transfer(from, to, amount, data)
+      +revert(transactionId, data)
+      +calculateBalance(account)
+    }
+
+    class Manager
+    class ManagerDbTransaction
+    class ManagerDb
+    class ManagerActiveRecord
+
+    ManagerInterface <|.. Manager
+    Manager <|-- ManagerDbTransaction
+    ManagerDbTransaction <|-- ManagerDb
+    ManagerDbTransaction <|-- ManagerActiveRecord
 ```
 
-or add
+### Поток перевода
 
-```json
-"yii2tech/balance": "*"
+```mermaid
+sequenceDiagram
+    participant App as Приложение
+    participant M as balanceManager
+    participant DB as Хранилище
+
+    App->>M: transfer(from, to, amount, data)
+    M->>M: begin transaction
+    M->>DB: create debit transaction
+    M->>DB: create credit transaction
+    M->>DB: update account balances (optional)
+    M->>M: commit transaction
+    M-->>App: [debitTransactionId, creditTransactionId]
 ```
 
-to the require section of your composer.json.
-
-
-Usage
------
-
-This extension provides basic support for balance accounting (bookkeeping) system based on [debit and credit](https://en.wikipedia.org/wiki/Debits_and_credits) principle.
-Balance system is usually used for the accounting (bookkeeping) and money operations. However, it may also be used for any
-resource transferring from one location to another. For example: transferring goods from storehouse to the shop and so on.
-
-There 2 main terms related to the balance system:
-
- - account - virtual storage of the resources, which have some logical meaning.
- - transaction - represents actual transfer of the resources to or from particular account.
-
-Lets assume we have a system, which provides virtual money balance for the user. Money on the balance can be used for the
-goods purchasing, user can top up his balance via some payment gateway. In such example, each user should have 3 virtual
-balance accounts: 'virtual-money', 'payment-gateway' and 'purchases'. When user tops up his virtual balance, our system
-should remove money from 'payment-gateway' and add them to 'virtual-money'. When user purchases an item, our system should
-remove money from 'virtual-money' and add them to 'purchases'.
-The trick is: if you sum current amount over all user related accounts ('payment-gateway' + 'virtual-money' + 'purchases'),
-it will always be equal to zero. Such check allows you to verify if something went wrong any time.
-
-This extension introduces term 'balance manager' as a Yii application component, which should handle all balance transactions.
-Several implementations of such component are provided:
-
- - [[yii2tech\balance\ManagerDb]] - uses a relational database as a data storage.
- - [[yii2tech\balance\ManagerActiveRecord]] - uses ActiveRecord classes for the data storage.
-
-Please refer to the particular manager class for more details.
-
-You can use balance manager as standalone object or configure it as application component.
-Application configuration example:
+## Быстрый старт (ManagerDb)
 
 ```php
+use yii2tech\balance\ManagerDb;
+
 return [
     'components' => [
         'balanceManager' => [
-            'class' => 'yii2tech\balance\ManagerDb',
-            'accountTable' => '{{%BalanceAccount}}',
-            'transactionTable' => '{{%BalanceTransaction}}',
+            'class' => ManagerDb::class,
+            'accountTable' => '{{%balance_account}}',
+            'transactionTable' => '{{%balance_transaction}}',
             'accountLinkAttribute' => 'accountId',
             'amountAttribute' => 'amount',
+            'dateAttribute' => 'createdAt',
             'dataAttribute' => 'data',
+            'accountBalanceAttribute' => 'balance',
+            'extraAccountLinkAttribute' => 'extraAccountId',
         ],
     ],
-    ...
 ];
 ```
 
-In order to increase (debit) balance at particular account, [[\yii2tech\balance\ManagerInterface::increase()]] method is used:
+Операции:
 
 ```php
-Yii::$app->balanceManager->increase($accountId, 500); // add 500 credits to account
+$manager = Yii::$app->balanceManager;
+
+$manager->increase(10, 500, ['reason' => 'Пополнение']);
+$manager->decrease(10, 100, ['reason' => 'Списание']);
+$pair = $manager->transfer(10, 20, 250, ['orderId' => 777]);
+$manager->revert($pair[0], ['reason' => 'Отмена операции']);
 ```
 
-In order to decrease (credit) balance at particular account, [[\yii2tech\balance\ManagerInterface::decrease()]] method is used:
+## Поиск счёта по фильтру
+
+Можно передавать массив атрибутов вместо ID. Если счёт не найден и включен `autoCreateAccount`, счёт будет создан автоматически.
 
 ```php
-Yii::$app->balanceManager->decrease($accountId, 100); // remove 100 credits from account
-```
+$manager->autoCreateAccount = true;
 
-> Tip: actually, method `decrease()` is redundant, you can call `increase()` with negative amount in order to achieve same result.
-
-It is unlikely you will use plain `increase()` and `decrease()` methods in your application. In most cases there is a need
-to **transfer** money from one account to another at once. Method [[\yii2tech\balance\ManagerInterface::transfer()]] can be
-used for this:
-
-```php
-$fromId = 1;
-$toId = 2;
-Yii::$app->balanceManager->transfer($fromId, $to, 100); // remove 100 credits from account 1 and add 100 credits to account 2
-```
-
-Note that method `transfer()` creates 2 separated transactions: one per each affected account. Thus you can easily fetch
-all money transfer history for particular account, simply selecting all transactions linked to it. 'Debit' transactions
-will have positive amount, while 'credit' ones - negative.
-
-> Note: If you wish each transaction created by `transfer()` remember another account involved in the process, you'll need
-  to setup [[\yii2tech\balance\Manager::$extraAccountLinkAttribute]].
-
-You may revert particular transaction using [[\yii2tech\balance\ManagerInterface::revert()]] method:
-
-```php
-Yii::$app->balanceManager->revert($transactionId);
-```
-
-This method will not remove original transaction, but create new one, which compensates it.
-
-
-## Querying accounts <span id="querying-accounts"></span>
-
-Using account IDs for the balance manager is not very practical. In our above example, each system user have 3 virtual
-accounts, each of which has its own unique ID. However, while performing purchase we operating user ID and account type,
-so we need to query actual account ID before using balance manager.
-Thus there is an ability to specify account for the balance manager methods using their attributes set. For example:
-
-```php
-Yii::$app->balanceManager->transfer(
-    [
-        'userId' => Yii::$app->user->id,
-        'type' => 'virtual-money',
-    ],
-    [
-        'userId' => Yii::$app->user->id,
-        'type' => 'purchases',
-    ],
-    500
+$manager->increase(
+    ['userId' => 15, 'type' => 'wallet'],
+    1000,
+    ['source' => 'manual-topup']
 );
 ```
 
-In this example balance manager will find ID of the affected accounts automatically, using provided attributes as a filter.
-
-You may enable [[yii2tech\balance\Manager::$autoCreateAccount]], allowing automatic creation of the missing accounts, if they
-are specified as attributes set. This allows accounts creation on the fly, by demand only, eliminating necessity of their
-pre-creation.
-
-**Heads up!** Actually 'account' entity is redundant at balance system, and its usage can be avoided. However, its presence
-provides more flexibility and saves performance. Storing of account data is not mandatory for this extension, you can
-configure your balance manager in the way it is not used.
-
-
-## Finding account current balance <span id="finding-account-current-balance"></span>
-
-Current money amount at particular account can always be calculated as a sum of amounts over related transactions.
-You can use [[\yii2tech\balance\ManagerInterface::calculateBalance()]] method for that:
+## Работа с текущим балансом
 
 ```php
-Yii::$app->balanceManager->transfer($fromAccount, $toAccount, 100); // assume this is first time accounts are affected
-
-echo Yii::$app->balanceManager->calculateBalance($fromAccount); // outputs: -100
-echo Yii::$app->balanceManager->calculateBalance($toAccount); // outputs: 100
+$current = $manager->calculateBalance(['userId' => 15, 'type' => 'wallet']);
 ```
 
-However, calculating current balance each time you need it, is not efficient. Thus you can specify an attribute of account
-entity, which will be used to store current account balance. This can be done via [[\yii2tech\balance\Manager::$accountBalanceAttribute]].
-Each time balance manager performs a transaction it will update this attribute accordingly:
+Если задан `accountBalanceAttribute`, баланс обновляется инкрементально при каждой операции, что дешевле частого пересчёта суммы по всем транзакциям.
+
+## Дополнительные данные транзакции
+
+Доп. поля передаются в параметре `$data` и сохраняются в:
+
+- отдельные колонки, если они есть в таблице транзакций;
+- либо в сериализованное поле (`dataAttribute`).
 
 ```php
-use yii\db\Query;
-
-Yii::$app->balanceManager->transfer($fromAccountId, $toAccountId, 100); // assume this is first time accounts are affected
-
-$currentBalance = (new Query())
-    ->select(['balance'])
-    ->from('BalanceAccount')
-    ->andWhere(['id' => $fromAccountId])
-    ->scalar();
-
-echo $currentBalance; // outputs: -100
-```
-
-
-## Saving extra transaction data <span id="saving-extra-transaction-data"></span>
-
-Usually there is a necessity to save extra information along with the transaction. For example: we may need to save
-payment ID received from payment gateway. This can be achieved in following way:
-
-```php
-// simple increase :
-Yii::$app->balanceManager->increase(
+$manager->transfer(
+    ['userId' => 15, 'type' => 'gateway'],
+    ['userId' => 15, 'type' => 'wallet'],
+    500,
     [
-        'userId' => Yii::$app->user->id,
-        'type' => 'virtual-money',
-    ],
-    100,
-    // extra data associated with transaction :
-    [
-        'paymentGateway' => 'PayPal',
-        'paymentId' => 'abcxyzerft',
-    ]
-);
-
-// transfer :
-Yii::$app->balanceManager->transfer(
-    [
-        'userId' => Yii::$app->user->id,
-        'type' => 'payment-gateway',
-    ],
-    [
-        'userId' => Yii::$app->user->id,
-        'type' => 'virtual-money',
-    ],
-    100,
-    // extra data associated with transaction :
-    [
-        'paymentGateway' => 'PayPal',
-        'paymentId' => 'abcxyzerft',
+        'paymentGateway' => 'SBP',
+        'paymentId' => 'P-2026-03-001',
     ]
 );
 ```
 
-The way extra attributes are stored in the data storage depends on particular balance manager implementation.
-For example: [[\yii2tech\balance\ManagerDb]] will try to store extra data inside transaction table columns, if their name
-equals the parameter name. You may as well setup special data field via [[\yii2tech\balance\ManagerDb::$dataAttribute]],
-which will store all extra parameters, which have no matching column, in serialized state.
+## События
 
-> Note: watch for the keys you use in transaction data: make sure they do not conflict with columns, which are
-  reserved for other purposes, like primary keys.
-
-
-## Events <span id="events"></span>
-
-[[\yii2tech\balance\Manager]] provide several events, which can be handled via event handler or behavior:
-
- - [[yii2tech\balance\Manager::EVENT_BEFORE_CREATE_TRANSACTION]] - raised before creating new transaction.
- - [[yii2tech\balance\Manager::EVENT_AFTER_CREATE_TRANSACTION]] - raised after creating new transaction.
-
-For example:
+- `Manager::EVENT_BEFORE_CREATE_TRANSACTION`
+- `Manager::EVENT_AFTER_CREATE_TRANSACTION`
 
 ```php
 use yii2tech\balance\Manager;
-use yii2tech\balance\ManagerDb;
 
-$manager = new ManagerDb();
-
-$manager->on(Manager::EVENT_BEFORE_CREATE_TRANSACTION, function ($event) {
-    $event->transactionData['amount'] += 10; // you may adjust transaction data to be saved, including transaction amount
-    $event->transactionData['comment'] = 'adjusted by event handler';
+$manager->on(Manager::EVENT_BEFORE_CREATE_TRANSACTION, static function ($event) {
+    $event->transactionData['meta'] = 'Заполнено обработчиком';
 });
 
-$manager->on(Manager::EVENT_AFTER_CREATE_TRANSACTION, function ($event) {
-    echo 'new transaction: ' $event->transactionId; // you may get newly created transaction ID
+$manager->on(Manager::EVENT_AFTER_CREATE_TRANSACTION, static function ($event) {
+    Yii::info('Создана транзакция #' . $event->transactionId, __METHOD__);
 });
-
-$manager->increase(1, 100); // outputs: 'new transaction: 1'
-echo Yii::$app->balanceManager->calculateBalance(1); // outputs: 110
 ```
+
+## i18n и сообщения ошибок
+
+В расширении все сообщения исключений переведены на `Yii::t()` и вынесены в отдельный словарь.
+
+Категория: `yii2tech.balance`.
+
+Файлы переводов:
+
+- `messages/ru/yii2tech.balance.php`
+- `messages/en/yii2tech.balance.php`
+
+Расширение регистрирует источник переводов через bootstrap-класс `yii2tech\balance\Bootstrap` автоматически (через `composer.json` -> `extra.bootstrap`).
+
+## Пример схемы БД
+
+```mermaid
+erDiagram
+    BALANCE_ACCOUNT {
+      bigint id PK
+      bigint userId
+      varchar type
+      decimal balance
+    }
+
+    BALANCE_TRANSACTION {
+      bigint id PK
+      datetime createdAt
+      bigint accountId
+      bigint extraAccountId
+      decimal amount
+      text data
+    }
+
+    BALANCE_ACCOUNT ||--o{ BALANCE_TRANSACTION : "accountId"
+```
+
+Минимальная миграция (пример):
+
+```php
+$this->createTable('{{%balance_account}}', [
+    'id' => $this->primaryKey(),
+    'userId' => $this->bigInteger()->notNull(),
+    'type' => $this->string(32)->notNull(),
+    'balance' => $this->decimal(19, 4)->notNull()->defaultValue(0),
+]);
+
+$this->createTable('{{%balance_transaction}}', [
+    'id' => $this->primaryKey(),
+    'createdAt' => $this->dateTime()->notNull(),
+    'accountId' => $this->bigInteger()->notNull(),
+    'extraAccountId' => $this->bigInteger()->null(),
+    'amount' => $this->decimal(19, 4)->notNull(),
+    'data' => $this->text()->null(),
+]);
+```
+
+## Безопасность
+
+- операции записи выполняются в транзакции (`ManagerDbTransaction`);
+- сериализатор PHP защищён от object-injection по умолчанию (`allowedClasses = false`);
+- входные суммы валидируются как числовые;
+- ошибки конфигурации и бизнес-ошибки отдаются через i18n-сообщения;
+- в CI доступны `phpstan`, `psalm --taint-analysis`, `composer audit`.
+
+## Разработка и проверки
+
+```bash
+composer test
+composer analyse
+composer security:taint
+composer security:audit
+composer qa
+```
+
+## Лицензия
+
+BSD-3-Clause. Подробности в файле [LICENSE.md](LICENSE.md).

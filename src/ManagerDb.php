@@ -118,7 +118,7 @@ class ManagerDb extends ManagerDbTransaction
     {
         $primaryKeys = $this->getDbConnection()->getSchema()->insert($this->accountTable, $attributes);
         if (!is_array($primaryKeys) || $primaryKeys === []) {
-            throw new InvalidConfigException('Не удалось получить первичный ключ после создания счёта.');
+            throw new InvalidConfigException(\Yii::t(Manager::I18N_CATEGORY, 'error.account_primary_key_not_received'));
         }
 
         return count($primaryKeys) > 1 ? implode(',', $primaryKeys) : array_shift($primaryKeys);
@@ -140,7 +140,7 @@ class ManagerDb extends ManagerDbTransaction
         $serializedAttributes = $this->serializeAttributes($attributes, $allowedAttributes);
         $primaryKeys = $this->getDbConnection()->getSchema()->insert($this->transactionTable, $serializedAttributes);
         if (!is_array($primaryKeys) || $primaryKeys === []) {
-            throw new InvalidConfigException('Не удалось получить первичный ключ после создания транзакции.');
+            throw new InvalidConfigException(\Yii::t(Manager::I18N_CATEGORY, 'error.transaction_primary_key_not_received'));
         }
 
         return count($primaryKeys) > 1 ? implode(',', $primaryKeys) : array_shift($primaryKeys);
@@ -194,7 +194,9 @@ class ManagerDb extends ManagerDbTransaction
     {
         $schema = $this->getDbConnection()->getTableSchema($tableName);
         if ($schema === null) {
-            throw new InvalidConfigException("Таблица '{$tableName}' не найдена в схеме БД.");
+            throw new InvalidConfigException(\Yii::t(Manager::I18N_CATEGORY, 'error.table_not_found', [
+                'table' => $tableName,
+            ]));
         }
 
         return $schema;
@@ -205,7 +207,9 @@ class ManagerDb extends ManagerDbTransaction
         $primaryKeys = $this->getRequiredTableSchema($tableName)->primaryKey;
         $primaryKey = array_shift($primaryKeys);
         if ($primaryKey === null) {
-            throw new InvalidConfigException("Таблица '{$tableName}' должна иметь первичный ключ.");
+            throw new InvalidConfigException(\Yii::t(Manager::I18N_CATEGORY, 'error.table_pk_required', [
+                'table' => $tableName,
+            ]));
         }
 
         return $primaryKey;
