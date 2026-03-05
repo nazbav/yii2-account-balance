@@ -38,6 +38,29 @@
 - `minimumAllowedBalance: int|float`
   - Порог минимального баланса.
 
+### ООП-настройка через объект правил
+
+Для удобной и явной настройки можно использовать `BalanceRules`:
+
+```php
+use nazbav\balance\BalanceRules;
+
+$manager->setBalanceRules(new BalanceRules(
+    requirePositiveAmount: true,
+    forbidTransferToSameAccount: true,
+    forbidNegativeBalance: true,
+    minimumAllowedBalance: 0,
+));
+```
+
+Быстрый строгий профиль:
+
+```php
+$manager->enableStrictMode();
+// или
+$manager->setBalanceRules(BalanceRules::strict());
+```
+
 ## ManagerDb
 
 Дополнительные параметры:

@@ -125,7 +125,6 @@ class ManagerDb extends ManagerDbTransaction
      * @param array<string, mixed> $attributes
      * @throws InvalidConfigException
      * @throws NotSupportedException
-     * @throws InvalidConfigException
      */
     protected function createAccount(array $attributes): mixed
     {
@@ -141,8 +140,6 @@ class ManagerDb extends ManagerDbTransaction
      * @param array<string, mixed> $attributes
      * @throws InvalidConfigException
      * @throws NotSupportedException
-     * @throws InvalidConfigException
-     * @throws InvalidConfigException
      */
     protected function createTransaction(array $attributes): mixed
     {
@@ -187,7 +184,7 @@ class ManagerDb extends ManagerDbTransaction
                 [
                     'accountId' => $accountId,
                     'amount' => $amount,
-                    'minimumBalance' => $this->normalizeAmount($this->minimumAllowedBalance),
+                    'minimumBalance' => $this->getNormalizedMinimumAllowedBalance(),
                 ]
             )->execute();
 

@@ -39,7 +39,6 @@ class ManagerActiveRecord extends ManagerDbTransaction
     /**
      * @param array<string, mixed> $attributes
      * @throws InvalidConfigException
-     * @throws InvalidConfigException
      */
     protected function findAccountId(array $attributes): mixed
     {
@@ -127,7 +126,7 @@ class ManagerActiveRecord extends ManagerDbTransaction
 
         if ($this->forbidNegativeBalance && $amount < 0) {
             $condition .= " AND $quotedBalanceColumn + :amount >= :minimumBalance";
-            $params['minimumBalance'] = $this->normalizeAmount($this->minimumAllowedBalance);
+            $params['minimumBalance'] = $this->getNormalizedMinimumAllowedBalance();
         }
 
         $affectedRows = $class::getDb()->createCommand()->update(
@@ -183,7 +182,6 @@ class ManagerActiveRecord extends ManagerDbTransaction
     /**
      * @param class-string<ActiveRecord>|string $className
      * @return class-string<ActiveRecord>
-     * @throws InvalidConfigException
      * @throws InvalidConfigException
      */
     private function ensureActiveRecordClass(string $className, string $propertyName): string

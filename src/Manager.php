@@ -91,6 +91,38 @@ abstract class Manager extends Component implements ManagerInterface
     public int|float $minimumAllowedBalance = 0;
 
     /**
+     * Применяет набор правил выполнения операций баланса.
+     */
+    public function setBalanceRules(BalanceRules $rules): void
+    {
+        $this->requirePositiveAmount = $rules->requirePositiveAmount;
+        $this->forbidTransferToSameAccount = $rules->forbidTransferToSameAccount;
+        $this->forbidNegativeBalance = $rules->forbidNegativeBalance;
+        $this->minimumAllowedBalance = $this->normalizeAmount($rules->minimumAllowedBalance);
+    }
+
+    /**
+     * Возвращает текущее состояние правил выполнения операций баланса.
+     */
+    public function getBalanceRules(): BalanceRules
+    {
+        return new BalanceRules(
+            requirePositiveAmount: $this->requirePositiveAmount,
+            forbidTransferToSameAccount: $this->forbidTransferToSameAccount,
+            forbidNegativeBalance: $this->forbidNegativeBalance,
+            minimumAllowedBalance: $this->minimumAllowedBalance,
+        );
+    }
+
+    /**
+     * Включает строгий профиль правил.
+     */
+    public function enableStrictMode(int|float $minimumAllowedBalance = 0): void
+    {
+        $this->setBalanceRules(BalanceRules::strict($minimumAllowedBalance));
+    }
+
+    /**
      * Возвращает локализованное сообщение расширения.
      *
      * @param array<string, mixed> $params
@@ -301,14 +333,31 @@ abstract class Manager extends Component implements ManagerInterface
      */
     protected function normalizeAmount(mixed $amount): int|float
     {
-        if (is_int($amount) || is_float($amount)) {
+        if (is_int($amount)) {
+            return $amount;
+        }
+        if (is_float($amount)) {
+            if (!is_finite($amount)) {
+                throw new InvalidArgumentException(self::t('error.amount_must_be_finite'));
+            }
+
             return $amount;
         }
         if (is_numeric($amount)) {
-            return str_contains((string) $amount, '.') ? (float) $amount : (int) $amount;
+            $normalizedAmount = str_contains((string) $amount, '.') ? (float) $amount : (int) $amount;
+            if (is_float($normalizedAmount) && !is_finite($normalizedAmount)) {
+                throw new InvalidArgumentException(self::t('error.amount_must_be_finite'));
+            }
+
+            return $normalizedAmount;
         }
 
         throw new InvalidArgumentException(self::t('error.amount_not_numeric'));
+    }
+
+    protected function getNormalizedMinimumAllowedBalance(): int|float
+    {
+        return $this->normalizeAmount($this->minimumAllowedBalance);
     }
 
     /**

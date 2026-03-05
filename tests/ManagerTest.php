@@ -5,6 +5,7 @@ declare(strict_types=1);
 
 namespace nazbav\tests\unit\balance;
 
+use nazbav\balance\BalanceRules;
 use nazbav\balance\Manager;
 use nazbav\balance\TransactionEvent;
 use nazbav\tests\unit\balance\data\ManagerMock;
@@ -47,6 +48,15 @@ class ManagerTest extends TestCase
     public function testIncreaseRejectsInfiniteAmount()
     {
         $manager = new ManagerMock();
+
+        $this->expectException('yii\base\InvalidArgumentException');
+        $manager->increase(1, INF);
+    }
+
+    public function testIncreaseRejectsInfiniteAmountEvenWithoutPositiveRule()
+    {
+        $manager = new ManagerMock();
+        $manager->requirePositiveAmount = false;
 
         $this->expectException('yii\base\InvalidArgumentException');
         $manager->increase(1, INF);
@@ -205,6 +215,47 @@ class ManagerTest extends TestCase
 
         $this->expectException('yii\base\InvalidConfigException');
         $manager->decrease(1, 1);
+    }
+
+    public function testSetAndGetBalanceRules()
+    {
+        $manager = new ManagerMock();
+        $manager->setBalanceRules(new BalanceRules(
+            requirePositiveAmount: false,
+            forbidTransferToSameAccount: false,
+            forbidNegativeBalance: true,
+            minimumAllowedBalance: -100,
+        ));
+
+        $this->assertFalse($manager->requirePositiveAmount);
+        $this->assertFalse($manager->forbidTransferToSameAccount);
+        $this->assertTrue($manager->forbidNegativeBalance);
+        $this->assertSame(-100, $manager->minimumAllowedBalance);
+
+        $rules = $manager->getBalanceRules();
+        $this->assertFalse($rules->requirePositiveAmount);
+        $this->assertFalse($rules->forbidTransferToSameAccount);
+        $this->assertTrue($rules->forbidNegativeBalance);
+        $this->assertSame(-100, $rules->minimumAllowedBalance);
+    }
+
+    public function testEnableStrictMode()
+    {
+        $manager = new ManagerMock();
+        $manager->enableStrictMode();
+
+        $this->assertTrue($manager->requirePositiveAmount);
+        $this->assertTrue($manager->forbidTransferToSameAccount);
+        $this->assertTrue($manager->forbidNegativeBalance);
+        $this->assertSame(0, $manager->minimumAllowedBalance);
+    }
+
+    public function testSetBalanceRulesRejectsInfiniteMinimum()
+    {
+        $manager = new ManagerMock();
+
+        $this->expectException('yii\base\InvalidArgumentException');
+        $manager->setBalanceRules(BalanceRules::strict(INF));
     }
 
     /**

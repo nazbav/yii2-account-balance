@@ -57,7 +57,6 @@ trait ManagerDataSerializeTrait
      * @param array<int, string> $allowedAttributes
      * @return array<string, mixed>
      * @throws InvalidConfigException
-     * @throws InvalidConfigException
      */
     protected function serializeAttributes(array $attributes, array $allowedAttributes): array
     {
@@ -84,7 +83,6 @@ trait ManagerDataSerializeTrait
     /**
      * @param array<string, mixed> $attributes
      * @return array<string, mixed>
-     * @throws InvalidConfigException
      * @throws InvalidConfigException
      */
     protected function unserializeAttributes(array $attributes): array
