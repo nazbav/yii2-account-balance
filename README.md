@@ -24,6 +24,16 @@ Yii2-расширение для учёта баланса и транзакци
 - Yii2 `~2.0.14`;
 - для промышленного режима с `ManagerDb` рекомендуется MySQL `8.0+` (InnoDB).
 
+## Контур качества
+
+- `phpunit` — полный набор unit/integration тестов библиотеки;
+- `phpstan` — уровень строгости `8`;
+- `psalm --taint-analysis` — контроль taint-потоков;
+- `infection` — мутационное тестирование критического ядра (`Manager`, `ManagerDb`, `ManagerActiveRecord`) с требованием `MSI=100` и `Covered MSI=100`;
+- GitHub Actions:
+  - `.github/workflows/php.yml` — основной pipeline качества;
+  - `.github/workflows/security.yml` — security-проверки репозитория.
+
 ## Установка
 
 ```bash
@@ -54,6 +64,9 @@ return [
             'requirePositiveAmount' => true,
             'forbidTransferToSameAccount' => true,
             'forbidNegativeBalance' => true,
+            'forbidDuplicateOperationId' => true,
+            'requireOperationId' => true,
+            'operationIdAttribute' => 'operationId',
             'minimumAllowedBalance' => 0,
         ],
     ],

@@ -52,6 +52,21 @@ flowchart TD
 - PHP: `8.1`, `8.3`.
 - Yii2: `~2.0.14`.
 
+## Контроль качества библиотеки
+
+- `phpunit -c phpunit.xml.dist` — полный тестовый контур;
+- `phpstan analyse -c phpstan.neon --no-progress` — обязательный проход на уровне `8`;
+- `infection --threads=max --only-covered --filter=src/Manager.php,src/ManagerDb.php,src/ManagerActiveRecord.php --no-progress` — мутационное тестирование ядра с порогами `100/100`;
+- `psalm --taint-analysis --no-cache --output-format=console` — контроль taint-потоков.
+
+### Минимальная проверка перед публикацией
+
+```bash
+composer.phar test
+composer.phar analyse
+composer.phar test:mutation
+```
+
 ## Принципы актуальности
 
 - Документация основана на текущем коде ветки `master`.

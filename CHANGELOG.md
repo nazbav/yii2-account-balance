@@ -1,6 +1,22 @@
 Журнал изменений nazbav/yii2-account-balance
 =============================================
 
+1.5.0, March 5, 2026
+--------------------
+
+- Актуализирована вся документация библиотеки:
+  - обновлены `README.md` и `docs/*.md` с текущими требованиями безопасности;
+  - добавлены актуальные команды quality-gate (`phpunit`, `phpstan` level 8, `infection`);
+  - синхронизированы разделы по `operationId`, anti-duplicate защите и рекомендованным индексам.
+- Усилен mutation-контур:
+  - добавлен `infection.json5` с порогами `minMsi=100` и `minCoveredMsi=100`;
+  - обновлён `composer`-скрипт `test:mutation`;
+  - обновлён шаг mutation-тестов в `.github/workflows/php.yml`.
+- Расширены тесты на позитивные и негативные сценарии безопасности:
+  - idempotency и duplicate operation protection;
+  - SQL/column-name injection защиты;
+  - проверки корректности записи и отката данных в БД.
+
 1.4.0, March 5, 2026
 --------------------
 

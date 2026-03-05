@@ -503,6 +503,7 @@ class ManagerActiveRecordTest extends TestCase
         } catch (\Throwable) {
             // Таблица может отсутствовать.
         }
+
         $db->createCommand()->createTable('StrictBalanceAccount', [
             'id' => 'pk',
             'userId' => 'integer',
@@ -549,6 +550,7 @@ class ManagerActiveRecordTest extends TestCase
         } catch (\Throwable) {
             // Таблица может отсутствовать.
         }
+
         $db->createCommand()->createTable('StrictBalanceTransaction', [
             'id' => 'pk',
             'date' => 'integer',
@@ -701,6 +703,7 @@ class ManagerActiveRecordTest extends TestCase
         } catch (\Throwable) {
             // Таблица может отсутствовать.
         }
+
         $db->createCommand()->createTable('ManualPkTransaction', [
             'code' => 'string PRIMARY KEY',
             'amount' => 'integer',

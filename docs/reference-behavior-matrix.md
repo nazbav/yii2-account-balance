@@ -25,9 +25,10 @@
 
 | Проверка | Фактическое поведение |
 |---|---|
-| Тип суммы | Принимаются `int`, `float`, numeric-string. |
+| Тип суммы в публичном API | Методы `increase/decrease/transfer` принимают только `int|float` (strict types). |
+| Тип суммы во внутренних вычислениях | `normalizeAmount()` дополнительно умеет обрабатывать numeric-строки (например, значения из БД). |
 | Бесконечность | `INF/-INF` отклоняются (`error.amount_must_be_finite`). |
-| `NaN` | Отклоняется как нечисловое (`error.amount_not_numeric`). |
+| `NaN` | Отклоняется как неконечное число (`error.amount_must_be_finite`). |
 | Положительность | При `requirePositiveAmount=true` сумма должна быть строго `> 0`. |
 
 ## 4. Работа со счетом
@@ -86,14 +87,27 @@
 15. `error.account_class_pk_required`
 16. `error.property_must_be_active_record_class`
 17. `error.account_attributes_empty_after_filter`
+18. `error.operation_id_required`
+19. `error.operation_id_invalid`
+20. `error.duplicate_operation_id`
+21. `error.operation_id_attribute_not_found`
 
 ## 8. Тестовое покрытие (факты)
 
-- Всего тестовых методов: `46`.
-- Исполняемых тестов в `phpunit`: `52`.
+- Исполняемых тестов в `phpunit`: `124`.
+- Актуальные факты по последнему прогону:
+  - `124 tests`;
+  - `226 assertions`;
+  - `0 failures`.
 - Распределение:
-  - `tests/ManagerTest.php`: `20`;
-  - `tests/ManagerDbTest.php`: `11`;
-  - `tests/ManagerActiveRecordTest.php`: `11`;
-  - `tests/ManagerDataSerializeTraitTest.php`: `4`.
+  - `tests/ManagerTest.php`: `41`;
+  - `tests/ManagerDbTest.php`: `36`;
+  - `tests/ManagerActiveRecordTest.php`: `37`;
+  - `tests/ManagerDataSerializeTraitTest.php`: `10` (из них часть через data provider).
 - Проверяются позитивные и негативные сценарии по валидации сумм, запрету одинаковых счетов, защите от перерасхода, сериализации и событиям.
+
+## 9. Мутационное покрытие ядра
+
+- `infection` запускается по `src/Manager.php`, `src/ManagerDb.php`, `src/ManagerActiveRecord.php`;
+- текущий целевой порог: `MSI=100`, `Covered MSI=100`;
+- актуальный результат: `301/301 killed`, `0 escaped`.

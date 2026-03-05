@@ -9,6 +9,16 @@
 - `bonus_spent` — аналитический кошелек списаний;
 - `qualifying_points` — квалификационные баллы для уровня.
 
+Обязательные защитные флаги менеджера:
+
+```php
+'forbidDuplicateOperationId' => true,
+'requireOperationId' => true,
+'operationIdAttribute' => 'operationId',
+'forbidNegativeBalance' => true,
+'accountBalanceAttribute' => 'balance',
+```
+
 ## 2. Правила уровней (пример)
 
 | Уровень | Диапазон qualifying points | Множитель бонуса |

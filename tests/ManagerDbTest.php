@@ -486,6 +486,7 @@ class ManagerDbTest extends TestCase
         } catch (\Throwable) {
             // Таблица может отсутствовать.
         }
+
         $db->createCommand()->createTable('CompositeBalanceAccount', [
             'tenantId' => 'integer NOT NULL',
             'userId' => 'integer NOT NULL',
@@ -518,6 +519,7 @@ class ManagerDbTest extends TestCase
         } catch (\Throwable) {
             // Таблица может отсутствовать.
         }
+
         $db->createCommand()->createTable('AltBalanceAccount', [
             'name' => 'string',
             'id' => 'pk',
@@ -543,6 +545,7 @@ class ManagerDbTest extends TestCase
         } catch (\Throwable) {
             // Таблица может отсутствовать.
         }
+
         $db->createCommand()->createTable('CompositeBalanceTransaction', [
             'accountId' => 'integer NOT NULL',
             'operationId' => 'string NOT NULL',

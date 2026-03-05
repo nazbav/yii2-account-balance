@@ -19,6 +19,7 @@
 - опциональное требование положительной суммы;
 - запрет перевода на тот же счет;
 - атомарная защита от отрицательного баланса (`forbidNegativeBalance`);
+- защита от повторной операции в рамках счета при `forbidDuplicateOperationId=true`;
 - транзакционный контур операций;
 - валидация имён колонок при динамических SQL-участках;
 - безопасное поведение `PhpSerializer` по умолчанию.
@@ -39,6 +40,9 @@
 'requirePositiveAmount' => true,
 'forbidTransferToSameAccount' => true,
 'forbidNegativeBalance' => true,
+'forbidDuplicateOperationId' => true,
+'requireOperationId' => true,
+'operationIdAttribute' => 'operationId',
 'minimumAllowedBalance' => 0,
 'accountBalanceAttribute' => 'balance',
 ```
@@ -46,6 +50,7 @@
 Дополнительно:
 
 - обязательный `operationId` для внешних команд;
+- индекс `(accountId, operationId)` в таблице транзакций;
 - раздельные кошельки `pending/available/spent`;
 - доменные лимиты на операции по сумме и частоте.
 

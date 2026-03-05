@@ -32,6 +32,9 @@ return [
             'requirePositiveAmount' => true,
             'forbidTransferToSameAccount' => true,
             'forbidNegativeBalance' => true,
+            'forbidDuplicateOperationId' => true,
+            'requireOperationId' => true,
+            'operationIdAttribute' => 'operationId',
             'minimumAllowedBalance' => 0,
         ],
     ],
@@ -57,11 +60,13 @@ CREATE TABLE balance_transaction (
   createdAt DATETIME NOT NULL,
   accountId BIGINT UNSIGNED NOT NULL,
   extraAccountId BIGINT UNSIGNED NULL,
+  operationId VARCHAR(128) NULL,
   amount DECIMAL(19,4) NOT NULL,
   data JSON NULL,
   PRIMARY KEY (id),
   KEY idx_balance_transaction_account_date (accountId, createdAt),
   KEY idx_balance_transaction_extra_account (extraAccountId),
+  KEY idx_balance_transaction_account_operation (accountId, operationId),
   CONSTRAINT fk_balance_transaction_account
     FOREIGN KEY (accountId) REFERENCES balance_account(id)
 ) ENGINE=InnoDB;
@@ -125,3 +130,11 @@ return [
 2. Хранить таблицу идемпотентности с уникальным индексом по `operationId`.
 3. Выполнять доменную антифрод-проверку до вызова `increase/decrease/transfer`.
 4. Разделять кошельки по назначению (`pending`, `available`, `spent`, `qualifying`).
+
+## 7. Быстрая самопроверка после интеграции
+
+```bash
+composer.phar test
+composer.phar analyse
+composer.phar test:mutation
+```

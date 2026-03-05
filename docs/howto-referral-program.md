@@ -15,6 +15,16 @@
 - `bonus_available`;
 - `referral_spent` (опционально для аналитики).
 
+Рекомендуемая базовая конфигурация менеджера для реферальных начислений:
+
+```php
+'forbidDuplicateOperationId' => true,
+'requireOperationId' => true,
+'operationIdAttribute' => 'operationId',
+'forbidNegativeBalance' => true,
+'accountBalanceAttribute' => 'balance',
+```
+
 ## 3. Базовый поток
 
 ### Шаг 1. Создание pending-начислений
@@ -56,6 +66,10 @@ $manager->increase(
 3. минимальное целевое действие приглашенного (например, оплаченный заказ);
 4. лимит подтвержденных рефералов за период;
 5. проверка device fingerprint / IP / поведенческих аномалий.
+
+Техническая рекомендация по БД:
+
+- индекс `(accountId, operationId)` в таблице транзакций обязателен для стабильной производительности anti-duplicate проверки.
 
 ### Шаг 3. Активация вознаграждения
 

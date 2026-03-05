@@ -32,6 +32,11 @@ interface ManagerInterface
 | `operationIdAttribute` | `string` | `operationId` | Ключ `operationId` в данных транзакции. |
 | `minimumAllowedBalance` | `int|float` | `0` | Нижняя граница баланса. |
 
+Примечание по `operationId`:
+
+- при `forbidDuplicateOperationId=true` в таблице транзакций должна существовать колонка, указанная в `operationIdAttribute`;
+- для производительности рекомендуется индекс `(accountLinkAttribute, operationIdAttribute)`.
+
 ## Настройка правил через `BalanceRules`
 
 ```php
@@ -84,6 +89,12 @@ $manager->on(Manager::EVENT_BEFORE_CREATE_TRANSACTION, static function (Transact
 - при `forbidNegativeBalance=true` применяется атомарное условное `UPDATE`;
 - автоинкрементный PK исключается из пользовательских атрибутов вставки.
 
+Рекомендуемые индексы для MySQL:
+
+- `idx_balance_transaction_account_date (accountId, date/createdAt)`;
+- `idx_balance_transaction_account_operation (accountId, operationId)` для anti-duplicate проверки;
+- уникальный индекс бизнес-ключей счета в `accountTable` (например, `(userId, walletType)`).
+
 ## `ManagerActiveRecord`
 
 Дополнительные свойства:
@@ -99,6 +110,7 @@ $manager->on(Manager::EVENT_BEFORE_CREATE_TRANSACTION, static function (Transact
 - фильтрация writable-атрибутов;
 - исключение auto-increment PK из массовой записи;
 - условное атомарное обновление баланса в режиме защиты от перерасхода.
+- проверки наличия required-колонок выполняются через schema introspection.
 
 ## Сериализация `data`
 
@@ -155,6 +167,14 @@ $manager->on(Manager::EVENT_BEFORE_CREATE_TRANSACTION, static function (Transact
 | `revert` | не применимо | зависит от исходной операции | не применимо | обратная операция | да |
 
 Детализация фактической логики: [Фактическая матрица поведения](reference-behavior-matrix.md).
+
+## Минимальный quality-gate
+
+```bash
+composer.phar test
+composer.phar analyse
+composer.phar test:mutation
+```
 
 ## Рекомендованный профиль для продакшна
 

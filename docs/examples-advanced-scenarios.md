@@ -150,3 +150,28 @@ flowchart LR
     H --> J
     I --> J
 ```
+
+## 9. Защита от повторного начисления (idempotency/anti-replay)
+
+```php
+$manager->increase(
+    ['userId' => $userId, 'walletType' => 'bonus_available'],
+    50,
+    [
+        'operationId' => "campaign:$campaignId:user:$userId",
+        'operationType' => 'campaign_bonus',
+    ]
+);
+
+// Повтор того же события с тем же operationId:
+$manager->increase(
+    ['userId' => $userId, 'walletType' => 'bonus_available'],
+    50,
+    [
+        'operationId' => "campaign:$campaignId:user:$userId",
+        'operationType' => 'campaign_bonus',
+    ]
+);
+```
+
+При `forbidDuplicateOperationId=true` второй вызов завершится `InvalidArgumentException` (`error.duplicate_operation_id`), а повторное начисление не будет создано.

@@ -515,6 +515,7 @@ class ManagerTest extends TestCase
     {
         $manager = new class () extends ManagerMock {
             public ?string $lastMethod = null;
+
             /**
              * @var array<string, mixed>|null
              */
@@ -565,6 +566,7 @@ class ManagerTest extends TestCase
              * @var array<int, mixed>|null
              */
             public ?array $lastTransfer = null;
+
             /**
              * @var array<string, mixed>|null
              */

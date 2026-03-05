@@ -70,3 +70,30 @@ flowchart TD
 В текущей версии `decrease()` обернут в `begin/commit/rollback` в `ManagerDbTransaction` так же, как `increase()`, `transfer()` и `revert()`.
 
 Если нужна единая транзакция на несколько доменных действий, внешний сервис может открыть собственную транзакцию и вызывать менеджер внутри нее.
+
+## 9. Какие команды обязательны перед публикацией?
+
+```bash
+composer.phar test
+composer.phar analyse
+composer.phar test:mutation
+```
+
+Ожидаемый результат:
+
+- `phpunit` проходит без падений;
+- `phpstan` проходит на уровне `8`;
+- `infection` по ядру показывает `MSI=100` и `Covered MSI=100`.
+
+## 10. Почему падает шаг `rector --dry-run` в CI?
+
+Обычно причина в форматировании после ручных правок.
+
+Исправление:
+
+```bash
+vendor/bin/rector process --ansi
+vendor/bin/rector process --dry-run --ansi
+```
+
+Второй запуск должен завершаться без изменений.
