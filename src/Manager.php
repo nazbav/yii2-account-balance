@@ -420,7 +420,7 @@ abstract class Manager extends Component implements ManagerInterface
         $i18n->translations[self::I18N_CATEGORY] = [
             'class' => PhpMessageSource::class,
             'basePath' => dirname(__DIR__) . '/messages',
-            'sourceLanguage' => 'xx-XX',
+            'sourceLanguage' => 'ru-RU',
             'fileMap' => [
                 self::I18N_CATEGORY => 'nazbav.balance.php',
             ],

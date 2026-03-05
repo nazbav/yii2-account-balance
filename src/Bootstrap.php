@@ -26,8 +26,8 @@ class Bootstrap implements BootstrapInterface
         $app->i18n->translations[Manager::I18N_CATEGORY] = [
             'class' => PhpMessageSource::class,
             'basePath' => dirname(__DIR__) . '/messages',
-            // Искусственный sourceLanguage, чтобы сообщения всегда брались из словаря.
-            'sourceLanguage' => 'xx-XX',
+            // Базовый язык исходных сообщений расширения.
+            'sourceLanguage' => 'ru-RU',
             'fileMap' => [
                 Manager::I18N_CATEGORY => 'nazbav.balance.php',
             ],
