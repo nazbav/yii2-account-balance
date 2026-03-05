@@ -73,6 +73,7 @@ trait ManagerDataSerializeTrait
                 $dataAttributes[$name] = $value;
             }
         }
+
         if ($dataAttributes !== []) {
             $safeAttributes[$this->dataAttribute] = $this->getSerializer()->serialize($dataAttributes);
         }
@@ -102,6 +103,7 @@ trait ManagerDataSerializeTrait
         if (!is_array($dataAttributes)) {
             throw new InvalidArgumentException(Manager::t('error.serialized_data_must_be_array'));
         }
+
         unset($attributes[$this->dataAttribute]);
 
         return array_merge($attributes, $dataAttributes);
@@ -109,7 +111,6 @@ trait ManagerDataSerializeTrait
 
     /**
      * @param string|array<string, mixed> $config
-     * @return SerializerInterface
      * @throws InvalidConfigException
      */
     protected function createSerializer(string|array $config): SerializerInterface

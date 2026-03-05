@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace nazbav\balance;
 
-use yii\base\InvalidConfigException;
 use yii\base\InvalidArgumentException;
+use yii\base\InvalidConfigException;
 use yii\base\NotSupportedException;
 use yii\db\Connection;
 use yii\db\Exception;
@@ -44,6 +44,7 @@ class ManagerDb extends ManagerDbTransaction
     public string $transactionTable = '{{%BalanceTransaction}}';
 
     private ?string $_accountIdAttribute = null;
+
     private ?string $_transactionIdAttribute = null;
 
     /**
@@ -148,6 +149,7 @@ class ManagerDb extends ManagerDbTransaction
             if ($column->isPrimaryKey && $column->autoIncrement) {
                 continue;
             }
+
             $allowedAttributes[] = $column->name;
         }
 
@@ -174,18 +176,18 @@ class ManagerDb extends ManagerDbTransaction
         $accountIdColumn = $this->ensureSafeColumnName($this->getAccountIdAttribute());
         $quotedBalanceColumn = $this->getDbConnection()->quoteColumnName($balanceColumn);
         $quotedAccountIdColumn = $this->getDbConnection()->quoteColumnName($accountIdColumn);
-        $balanceExpression = new Expression("$quotedBalanceColumn + :amount", ['amount' => $amount]);
+        $balanceExpression = new Expression($quotedBalanceColumn . ' + :amount', ['amount' => $amount]);
 
         if ($this->forbidNegativeBalance && $amount < 0) {
             $affectedRows = $this->getDbConnection()->createCommand()->update(
                 $this->accountTable,
                 [$balanceColumn => $balanceExpression],
-                "$quotedAccountIdColumn = :accountId AND $quotedBalanceColumn + :amount >= :minimumBalance",
+                sprintf('%s = :accountId AND %s + :amount >= :minimumBalance', $quotedAccountIdColumn, $quotedBalanceColumn),
                 [
                     'accountId' => $accountId,
                     'amount' => $amount,
                     'minimumBalance' => $this->getNormalizedMinimumAllowedBalance(),
-                ]
+                ],
             )->execute();
 
             if ($affectedRows === 0) {
@@ -201,7 +203,7 @@ class ManagerDb extends ManagerDbTransaction
         $this->getDbConnection()->createCommand()->update(
             $this->accountTable,
             [$balanceColumn => $balanceExpression],
-            [$accountIdColumn => $accountId]
+            [$accountIdColumn => $accountId],
         )->execute();
     }
 

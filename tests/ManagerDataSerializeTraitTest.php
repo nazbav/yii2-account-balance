@@ -2,45 +2,35 @@
 
 declare(strict_types=1);
 
-
 namespace nazbav\tests\unit\balance;
 
 use nazbav\tests\unit\balance\data\ManagerDataSerialize;
 
 class ManagerDataSerializeTraitTest extends TestCase
 {
-    /**
-     * @return array
-     */
-    public function dataProviderSerializeMethod()
+    public function dataProviderSerializeMethod(): array
     {
         return [
             ['json'],
             ['php'],
             [
                 [
-                    'serialize' => function ($value) {
-                        return serialize($value);
-                    },
-                    'unserialize' => function ($value) {
-                        return unserialize($value);
-                    },
-                ]
+                    'serialize' => fn ($value): string => serialize($value),
+                    'unserialize' => fn ($value): mixed => unserialize($value),
+                ],
             ],
             [
                 [
-                    'class' => 'nazbav\balance\PhpSerializer'
-                ]
+                    'class' => 'nazbav\balance\PhpSerializer',
+                ],
             ],
         ];
     }
 
     /**
      * @dataProvider dataProviderSerializeMethod
-     *
-     * @param string|array $serializer
      */
-    public function testSerialize($serializer)
+    public function testSerialize(string|array $serializer): void
     {
         $manager = new ManagerDataSerialize();
         $manager->serializer = $serializer;
@@ -54,10 +44,8 @@ class ManagerDataSerializeTraitTest extends TestCase
     /**
      * @depends testSerialize
      * @dataProvider dataProviderSerializeMethod
-     *
-     * @param string|array $serializer
      */
-    public function testUnserialize($serializer)
+    public function testUnserialize(string|array $serializer): void
     {
         $manager = new ManagerDataSerialize();
         $manager->serializer = $serializer;

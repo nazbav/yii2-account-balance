@@ -27,7 +27,8 @@
 ## Проверки качества
 
 - Локальный запуск полного набора проверок: `composer qa`.
-- Состав набора: `phpunit`, `phpstan` (уровень 8), `psalm --taint-analysis`, `composer audit`.
+- Состав набора: `parallel-lint`, `php-cs-fixer`, `rector`, `phpunit`, `phpstan` (уровень 8), `psalm --taint-analysis`, `composer audit`.
+- Для автоисправлений доступны команды: `composer cs:fix` и `composer rector:fix`.
 
 ## CI и релизы
 

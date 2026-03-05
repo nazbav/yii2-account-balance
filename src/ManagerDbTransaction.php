@@ -23,10 +23,7 @@ abstract class ManagerDbTransaction extends Manager
     private array $dbTransactions = [];
 
     /**
-     * @param mixed $account
-     * @param int|float $amount
      * @param array<string, mixed> $data
-     * @return mixed
      * @throws Exception
      * @throws Throwable
      */
@@ -38,16 +35,13 @@ abstract class ManagerDbTransaction extends Manager
             $this->commitDbTransaction();
 
             return $result;
-        } catch (Throwable $e) {
+        } catch (Throwable $throwable) {
             $this->rollBackDbTransaction();
-            throw $e;
+            throw $throwable;
         }
     }
 
     /**
-     * @param mixed $from
-     * @param mixed $to
-     * @param int|float $amount
      * @param array<string, mixed> $data
      * @return array<int, mixed>
      * @throws Exception
@@ -61,16 +55,14 @@ abstract class ManagerDbTransaction extends Manager
             $this->commitDbTransaction();
 
             return $result;
-        } catch (Throwable $e) {
+        } catch (Throwable $throwable) {
             $this->rollBackDbTransaction();
-            throw $e;
+            throw $throwable;
         }
     }
 
     /**
-     * @param mixed $transactionId
      * @param array<string, mixed> $data
-     * @return mixed
      * @throws Exception
      * @throws Throwable
      */
@@ -82,9 +74,9 @@ abstract class ManagerDbTransaction extends Manager
             $this->commitDbTransaction();
 
             return $result;
-        } catch (Throwable $e) {
+        } catch (Throwable $throwable) {
             $this->rollBackDbTransaction();
-            throw $e;
+            throw $throwable;
         }
     }
 

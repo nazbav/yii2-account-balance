@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace nazbav\balance;
 
-use yii\base\InvalidConfigException;
 use yii\base\InvalidArgumentException;
+use yii\base\InvalidConfigException;
 use yii\base\NotSupportedException;
-use yii\db\ActiveRecord;
 use yii\db\ActiveQuery;
+use yii\db\ActiveRecord;
 use yii\db\BaseActiveRecord;
-use yii\db\Expression;
 use yii\db\Exception;
+use yii\db\Expression;
 use yii\db\TableSchema;
 use yii\db\Transaction;
 
@@ -64,7 +64,6 @@ class ManagerActiveRecord extends ManagerDbTransaction
 
     /**
      * @param array<string, mixed> $attributes
-     * @return mixed
      * @throws Exception
      * @throws InvalidConfigException
      */
@@ -80,7 +79,6 @@ class ManagerActiveRecord extends ManagerDbTransaction
 
     /**
      * @param array<string, mixed> $attributes
-     * @return mixed
      * @throws Exception
      * @throws InvalidConfigException
      */
@@ -117,15 +115,15 @@ class ManagerActiveRecord extends ManagerDbTransaction
         $accountIdColumn = $this->ensureSafeColumnName($primaryKey);
         $quotedBalanceColumn = $db->quoteColumnName($balanceColumn);
         $quotedAccountIdColumn = $db->quoteColumnName($accountIdColumn);
-        $balanceExpression = new Expression("$quotedBalanceColumn + :amount", ['amount' => $amount]);
-        $condition = "$quotedAccountIdColumn = :accountId";
+        $balanceExpression = new Expression($quotedBalanceColumn . ' + :amount', ['amount' => $amount]);
+        $condition = $quotedAccountIdColumn . ' = :accountId';
         $params = [
             'accountId' => $accountId,
             'amount' => $amount,
         ];
 
         if ($this->forbidNegativeBalance && $amount < 0) {
-            $condition .= " AND $quotedBalanceColumn + :amount >= :minimumBalance";
+            $condition .= sprintf(' AND %s + :amount >= :minimumBalance', $quotedBalanceColumn);
             $params['minimumBalance'] = $this->getNormalizedMinimumAllowedBalance();
         }
 
@@ -133,7 +131,7 @@ class ManagerActiveRecord extends ManagerDbTransaction
             $class::tableName(),
             [$balanceColumn => $balanceExpression],
             $condition,
-            $params
+            $params,
         )->execute();
         if ($this->forbidNegativeBalance && $amount < 0 && $affectedRows === 0) {
             throw new InvalidArgumentException(self::t('error.insufficient_funds', [
@@ -230,7 +228,7 @@ class ManagerActiveRecord extends ManagerDbTransaction
             if ($column->isPrimaryKey && $column->autoIncrement) {
                 $allowedAttributes = array_values(array_filter(
                     $allowedAttributes,
-                    static fn (string $attributeName): bool => $attributeName !== $column->name
+                    static fn (string $attributeName): bool => $attributeName !== $column->name,
                 ));
             }
         }

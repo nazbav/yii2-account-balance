@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-
 namespace nazbav\tests\unit\balance\data;
 
 use yii\db\ActiveRecord;

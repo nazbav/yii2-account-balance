@@ -35,15 +35,23 @@
         }
     },
     "scripts": {
+        "lint:syntax": "parallel-lint src tests",
+        "cs:check": "php-cs-fixer fix --dry-run --diff --verbose",
+        "cs:fix": "php-cs-fixer fix --verbose",
+        "rector:check": "rector process --dry-run --ansi",
+        "rector:fix": "rector process --ansi",
         "test": "phpunit -c phpunit.xml.dist",
         "analyse": "phpstan analyse -c phpstan.neon --no-progress",
         "security:audit": "composer audit --locked",
         "security:taint": "psalm --taint-analysis --no-cache --output-format=console",
         "qa": [
+            "@lint:syntax",
+            "@cs:check",
+            "@rector:check",
             "@test",
             "@analyse",
-            "@security:audit",
-            "@security:taint"
+            "@security:taint",
+            "@security:audit"
         ]
     },
     "extra": {
@@ -62,6 +70,9 @@
         "phpstan/phpstan": "^1.12",
         "vimeo/psalm": "^5.26",
         "roave/security-advisories": "dev-latest",
-        "phpstan/phpstan-phpunit": "^1.4"
+        "phpstan/phpstan-phpunit": "^1.4",
+        "friendsofphp/php-cs-fixer": "^3.94",
+        "rector/rector": "^1.2",
+        "php-parallel-lint/php-parallel-lint": "^1.4"
     }
 }

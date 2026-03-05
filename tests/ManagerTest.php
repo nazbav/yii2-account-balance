@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-
 namespace nazbav\tests\unit\balance;
 
 use nazbav\balance\BalanceRules;
@@ -12,11 +11,12 @@ use nazbav\tests\unit\balance\data\ManagerMock;
 
 class ManagerTest extends TestCase
 {
-    public function testIncrease()
+    public function testIncrease(): void
     {
         $manager = new ManagerMock();
 
         $manager->increase(1, 50);
+
         $transaction = $manager->getLastTransaction();
         $this->assertEquals(50, $transaction['amount']);
 
@@ -28,16 +28,17 @@ class ManagerTest extends TestCase
     /**
      * @depends testIncrease
      */
-    public function testDecrease()
+    public function testDecrease(): void
     {
         $manager = new ManagerMock();
 
         $manager->decrease(1, 50);
+
         $transaction = $manager->getLastTransaction();
         $this->assertEquals(-50, $transaction['amount']);
     }
 
-    public function testIncreaseRejectsNonPositiveAmount()
+    public function testIncreaseRejectsNonPositiveAmount(): void
     {
         $manager = new ManagerMock();
 
@@ -45,7 +46,7 @@ class ManagerTest extends TestCase
         $manager->increase(1, 0);
     }
 
-    public function testIncreaseRejectsInfiniteAmount()
+    public function testIncreaseRejectsInfiniteAmount(): void
     {
         $manager = new ManagerMock();
 
@@ -53,7 +54,7 @@ class ManagerTest extends TestCase
         $manager->increase(1, INF);
     }
 
-    public function testIncreaseRejectsInfiniteAmountEvenWithoutPositiveRule()
+    public function testIncreaseRejectsInfiniteAmountEvenWithoutPositiveRule(): void
     {
         $manager = new ManagerMock();
         $manager->requirePositiveAmount = false;
@@ -62,7 +63,7 @@ class ManagerTest extends TestCase
         $manager->increase(1, INF);
     }
 
-    public function testDecreaseRejectsNonPositiveAmount()
+    public function testDecreaseRejectsNonPositiveAmount(): void
     {
         $manager = new ManagerMock();
 
@@ -73,11 +74,12 @@ class ManagerTest extends TestCase
     /**
      * @depends testIncrease
      */
-    public function testTransfer()
+    public function testTransfer(): void
     {
         $manager = new ManagerMock();
 
         $manager->transfer(1, 2, 10);
+
         $transactions = $manager->getLastTransactionPair();
         $this->assertEquals(-10, $transactions[0]['amount']);
         $this->assertEquals(10, $transactions[1]['amount']);
@@ -87,7 +89,7 @@ class ManagerTest extends TestCase
         $this->assertEquals('custom', $transaction['extra']);
     }
 
-    public function testTransferRejectsSameAccount()
+    public function testTransferRejectsSameAccount(): void
     {
         $manager = new ManagerMock();
 
@@ -98,7 +100,7 @@ class ManagerTest extends TestCase
     /**
      * @depends testIncrease
      */
-    public function testDateAttributeValue()
+    public function testDateAttributeValue(): void
     {
         $manager = new ManagerMock();
 
@@ -107,9 +109,7 @@ class ManagerTest extends TestCase
         $transaction = $manager->getLastTransaction();
         $this->assertTrue($transaction['date'] >= $now);
 
-        $manager->dateAttributeValue = function() {
-            return 'callback';
-        };
+        $manager->dateAttributeValue = fn (): string => 'callback';
         $manager->increase(1, 10);
         $transaction = $manager->getLastTransaction();
         $this->assertEquals('callback', $transaction['date']);
@@ -123,7 +123,7 @@ class ManagerTest extends TestCase
     /**
      * @depends testIncrease
      */
-    public function testAutoCreateAccount()
+    public function testAutoCreateAccount(): void
     {
         $manager = new ManagerMock();
 
@@ -139,7 +139,7 @@ class ManagerTest extends TestCase
     /**
      * @depends testIncrease
      */
-    public function testIncreaseAccountBalance()
+    public function testIncreaseAccountBalance(): void
     {
         $manager = new ManagerMock();
 
@@ -159,7 +159,7 @@ class ManagerTest extends TestCase
     /**
      * @depends testTransfer
      */
-    public function testSaveExtraAccount()
+    public function testSaveExtraAccount(): void
     {
         $manager = new ManagerMock();
 
@@ -174,7 +174,7 @@ class ManagerTest extends TestCase
      * @depends testIncreaseAccountBalance
      * @depends testTransfer
      */
-    public function testRevert()
+    public function testRevert(): void
     {
         $manager = new ManagerMock();
         $manager->accountBalanceAttribute = 'balance';
@@ -195,7 +195,7 @@ class ManagerTest extends TestCase
         $this->assertEquals(0, $manager->accountBalances[$toId]);
     }
 
-    public function testRevertDecreaseTransaction()
+    public function testRevertDecreaseTransaction(): void
     {
         $manager = new ManagerMock();
         $manager->accountBalanceAttribute = 'balance';
@@ -208,7 +208,7 @@ class ManagerTest extends TestCase
         $this->assertEquals(50, $manager->accountBalances[$accountId]);
     }
 
-    public function testForbidNegativeBalanceRequiresBalanceAttribute()
+    public function testForbidNegativeBalanceRequiresBalanceAttribute(): void
     {
         $manager = new ManagerMock();
         $manager->forbidNegativeBalance = true;
@@ -217,7 +217,7 @@ class ManagerTest extends TestCase
         $manager->decrease(1, 1);
     }
 
-    public function testSetAndGetBalanceRules()
+    public function testSetAndGetBalanceRules(): void
     {
         $manager = new ManagerMock();
         $manager->setBalanceRules(new BalanceRules(
@@ -239,7 +239,7 @@ class ManagerTest extends TestCase
         $this->assertSame(-100, $rules->minimumAllowedBalance);
     }
 
-    public function testEnableStrictMode()
+    public function testEnableStrictMode(): void
     {
         $manager = new ManagerMock();
         $manager->enableStrictMode();
@@ -250,7 +250,7 @@ class ManagerTest extends TestCase
         $this->assertSame(0, $manager->minimumAllowedBalance);
     }
 
-    public function testSetBalanceRulesRejectsInfiniteMinimum()
+    public function testSetBalanceRulesRejectsInfiniteMinimum(): void
     {
         $manager = new ManagerMock();
 
@@ -261,15 +261,16 @@ class ManagerTest extends TestCase
     /**
      * @depends testIncrease
      */
-    public function testEventBeforeCreateTransaction()
+    public function testEventBeforeCreateTransaction(): void
     {
         $manager = new ManagerMock();
-        $manager->on(Manager::EVENT_BEFORE_CREATE_TRANSACTION, function ($event) {
+        $manager->on(Manager::EVENT_BEFORE_CREATE_TRANSACTION, function ($event): void {
             /* @var $event TransactionEvent */
             $event->transactionData['extra'] = 'event';
         });
 
         $manager->increase(1, 50);
+
         $transaction = $manager->getLastTransaction();
         $this->assertEquals('event', $transaction['extra']);
     }
@@ -277,16 +278,17 @@ class ManagerTest extends TestCase
     /**
      * @depends testIncrease
      */
-    public function testEventAfterCreateTransaction()
+    public function testEventAfterCreateTransaction(): void
     {
         $manager = new ManagerMock();
         $eventTransactionId = null;
-        $manager->on(Manager::EVENT_AFTER_CREATE_TRANSACTION, function ($event) use (&$eventTransactionId) {
+        $manager->on(Manager::EVENT_AFTER_CREATE_TRANSACTION, function ($event) use (&$eventTransactionId): void {
             /* @var $event TransactionEvent */
             $eventTransactionId = $event->transactionId;
         });
 
         $manager->increase(1, 50);
+
         $transaction = $manager->getLastTransaction();
         $this->assertNotNull($eventTransactionId);
         $this->assertSame($eventTransactionId, $transaction['id']);

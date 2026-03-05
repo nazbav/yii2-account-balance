@@ -2,13 +2,12 @@
 
 declare(strict_types=1);
 
-
 namespace nazbav\tests\unit\balance;
 
-use Yii;
 use nazbav\balance\ManagerActiveRecord;
 use nazbav\tests\unit\balance\data\BalanceAccount;
 use nazbav\tests\unit\balance\data\BalanceTransaction;
+use Yii;
 
 /**
  * @group db
@@ -33,9 +32,10 @@ class ManagerActiveRecordTest extends TestCase
         $table = 'BalanceAccount';
         try {
             $db->createCommand()->dropTable($table)->execute();
-        } catch (\Throwable $e) {
+        } catch (\Throwable) {
             // Таблица может отсутствовать в новой базе.
         }
+
         $columns = [
             'id' => 'pk',
             'userId' => 'integer',
@@ -46,9 +46,10 @@ class ManagerActiveRecordTest extends TestCase
         $table = 'BalanceTransaction';
         try {
             $db->createCommand()->dropTable($table)->execute();
-        } catch (\Throwable $e) {
+        } catch (\Throwable) {
             // Таблица может отсутствовать в новой базе.
         }
+
         $columns = [
             'id' => 'pk',
             'date' => 'integer',
@@ -76,7 +77,7 @@ class ManagerActiveRecordTest extends TestCase
     /**
      * @return ManagerActiveRecord экземпляр тестового менеджера.
      */
-    protected function createManager()
+    protected function createManager(): \nazbav\balance\ManagerActiveRecord
     {
         $manager = new ManagerActiveRecord();
         $manager->accountClass = BalanceAccount::class;
@@ -86,11 +87,12 @@ class ManagerActiveRecordTest extends TestCase
 
     // Набор тестов.
 
-    public function testIncrease()
+    public function testIncrease(): void
     {
         $manager = $this->createManager();
 
         $manager->increase(1, 50);
+
         $transaction = $this->getLastTransaction();
         $this->assertEquals(50, $transaction['amount']);
 
@@ -102,7 +104,7 @@ class ManagerActiveRecordTest extends TestCase
     /**
      * @depends testIncrease
      */
-    public function testAutoCreateAccount()
+    public function testAutoCreateAccount(): void
     {
         $manager = $this->createManager();
 
@@ -120,7 +122,7 @@ class ManagerActiveRecordTest extends TestCase
     /**
      * @depends testAutoCreateAccount
      */
-    public function testIncreaseAccountBalance()
+    public function testIncreaseAccountBalance(): void
     {
         $manager = $this->createManager();
         $manager->autoCreateAccount = true;
@@ -137,7 +139,7 @@ class ManagerActiveRecordTest extends TestCase
     /**
      * @depends testIncrease
      */
-    public function testRevert()
+    public function testRevert(): void
     {
         $manager = $this->createManager();
 
@@ -151,7 +153,7 @@ class ManagerActiveRecordTest extends TestCase
         $this->assertEquals(-$amount, $transaction['amount']);
     }
 
-    public function testTransferRejectsSameAccount()
+    public function testTransferRejectsSameAccount(): void
     {
         $manager = $this->createManager();
 
@@ -159,7 +161,7 @@ class ManagerActiveRecordTest extends TestCase
         $manager->transfer(1, 1, 10);
     }
 
-    public function testForbidNegativeBalance()
+    public function testForbidNegativeBalance(): void
     {
         $manager = $this->createManager();
         $manager->autoCreateAccount = true;
@@ -172,8 +174,8 @@ class ManagerActiveRecordTest extends TestCase
         try {
             $manager->decrease(['userId' => 100], 50);
             $this->fail('Ожидалось исключение о недостатке средств.');
-        } catch (\yii\base\InvalidArgumentException $e) {
-            $this->assertStringContainsString('Недостаточно средств', $e->getMessage());
+        } catch (\yii\base\InvalidArgumentException $invalidArgumentException) {
+            $this->assertStringContainsString('Недостаточно средств', $invalidArgumentException->getMessage());
         }
 
         $account = BalanceAccount::find()->andWhere(['userId' => 100])->one();
@@ -181,11 +183,12 @@ class ManagerActiveRecordTest extends TestCase
         $this->assertEquals(30, $account['balance']);
     }
 
-    public function testSkipAutoIncrementPrimaryKeyInActiveRecord()
+    public function testSkipAutoIncrementPrimaryKeyInActiveRecord(): void
     {
         $manager = $this->createManager();
 
         $manager->increase(1, 10, ['id' => 9999999]);
+
         $transaction = $this->getLastTransaction();
 
         $this->assertNotEquals(9999999, $transaction['id']);
@@ -195,7 +198,7 @@ class ManagerActiveRecordTest extends TestCase
     /**
      * @depends testIncrease
      */
-    public function testCalculateBalance()
+    public function testCalculateBalance(): void
     {
         $manager = $this->createManager();
 

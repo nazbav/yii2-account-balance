@@ -131,3 +131,13 @@ $manager->on(Manager::EVENT_BEFORE_CREATE_TRANSACTION, static function ($event) 
   - неверная сумма, перевод на тот же счёт, отсутствие транзакции и т.д.
 - `yii\base\InvalidConfigException`
   - неверные классы/таблицы/колонки и ошибки конфигурации защиты.
+
+## Скрипты контроля качества
+
+- `composer lint:syntax` — синтаксический линт `parallel-lint`.
+- `composer cs:check` / `composer cs:fix` — проверка и исправление стиля через `php-cs-fixer`.
+- `composer rector:check` / `composer rector:fix` — проверка и применение рефакторинга через `rector`.
+- `composer analyse` — статический анализ `phpstan` (уровень 8).
+- `composer security:taint` — taint-анализ `psalm`.
+- `composer security:audit` — аудит зависимостей.
+- `composer qa` — полный набор проверок для CI и локального запуска.

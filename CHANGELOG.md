@@ -1,6 +1,22 @@
 Журнал изменений nazbav/yii2-account-balance
 =============================================
 
+1.3.0, March 5, 2026
+--------------------
+
+- Добавлены quality-gates и автоисправления кода:
+  - `friendsofphp/php-cs-fixer`;
+  - `rector/rector`;
+  - `php-parallel-lint/php-parallel-lint`.
+- Добавлены конфигурационные файлы `.php-cs-fixer.dist.php` и `rector.php`.
+- Расширены Composer-скрипты:
+  - `lint:syntax`, `cs:check`, `cs:fix`, `rector:check`, `rector:fix`;
+  - `qa` включает новые этапы до тестов и статанализа.
+- Обновлён workflow `.github/workflows/php.yml`:
+  - добавлены шаги `parallel-lint`, `php-cs-fixer` (dry-run), `rector` (dry-run).
+- Применён автоматический рефакторинг и выравнивание стиля в `src/` и `tests/`.
+- Добавлен `.php-cs-fixer.cache` в `.gitignore`.
+
 1.2.0, March 5, 2026
 --------------------
 

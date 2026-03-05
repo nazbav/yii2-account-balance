@@ -135,10 +135,7 @@ abstract class Manager extends Component implements ManagerInterface
     }
 
     /**
-     * @param mixed $account
-     * @param int|float $amount
      * @param array<string, mixed> $data
-     * @return mixed
      */
     public function increase(mixed $account, int|float $amount, array $data = []): mixed
     {
@@ -151,10 +148,7 @@ abstract class Manager extends Component implements ManagerInterface
     }
 
     /**
-     * @param mixed $account
-     * @param int|float $amount
      * @param array<string, mixed> $data
-     * @return mixed
      */
     public function decrease(mixed $account, int|float $amount, array $data = []): mixed
     {
@@ -167,9 +161,6 @@ abstract class Manager extends Component implements ManagerInterface
     }
 
     /**
-     * @param mixed $from
-     * @param mixed $to
-     * @param int|float $amount
      * @param array<string, mixed> $data
      * @return array<int, mixed>
      */
@@ -202,14 +193,12 @@ abstract class Manager extends Component implements ManagerInterface
     }
 
     /**
-     * @param mixed $transactionId
      * @param array<string, mixed> $data
-     * @return mixed
      */
     public function revert(mixed $transactionId, array $data = []): mixed
     {
         $transaction = $this->findTransaction($transactionId);
-        if (empty($transaction)) {
+        if ($transaction === null || $transaction === []) {
             throw new InvalidArgumentException(self::t('error.transaction_not_found', [
                 'id' => (string) $transactionId,
             ]));
@@ -251,7 +240,7 @@ abstract class Manager extends Component implements ManagerInterface
                     throw new InvalidArgumentException(
                         self::t('error.account_not_found_by_filter', [
                             'filter' => VarDumper::export($idOrFilter),
-                        ])
+                        ]),
                     );
                 }
             }
@@ -285,8 +274,6 @@ abstract class Manager extends Component implements ManagerInterface
     abstract protected function incrementAccountBalance(mixed $accountId, int|float $amount): void;
 
     /**
-     * @param mixed $account
-     * @param int|float $signedAmount
      * @param array<string, mixed> $data
      * @throws InvalidConfigException
      */
@@ -297,6 +284,7 @@ abstract class Manager extends Component implements ManagerInterface
         if (!isset($data[$this->dateAttribute])) {
             $data[$this->dateAttribute] = $this->getDateAttributeValue();
         }
+
         $data[$this->amountAttribute] = $signedAmount;
         $data[$this->accountLinkAttribute] = $accountId;
 
@@ -336,6 +324,7 @@ abstract class Manager extends Component implements ManagerInterface
         if (is_int($amount)) {
             return $amount;
         }
+
         if (is_float($amount)) {
             if (!is_finite($amount)) {
                 throw new InvalidArgumentException(self::t('error.amount_must_be_finite'));
@@ -343,8 +332,9 @@ abstract class Manager extends Component implements ManagerInterface
 
             return $amount;
         }
+
         if (is_numeric($amount)) {
-            $normalizedAmount = str_contains((string) $amount, '.') ? (float) $amount : (int) $amount;
+            $normalizedAmount = str_contains($amount, '.') ? (float) $amount : (int) $amount;
             if (is_float($normalizedAmount) && !is_finite($normalizedAmount)) {
                 throw new InvalidArgumentException(self::t('error.amount_must_be_finite'));
             }
@@ -380,7 +370,6 @@ abstract class Manager extends Component implements ManagerInterface
     }
 
     /**
-     * @param mixed $accountId
      * @param array<string, mixed> $data
      * @return array<string, mixed>
      */
@@ -396,8 +385,6 @@ abstract class Manager extends Component implements ManagerInterface
     }
 
     /**
-     * @param mixed $transactionId
-     * @param mixed $accountId
      * @param array<string, mixed> $data
      */
     protected function afterCreateTransaction(mixed $transactionId, mixed $accountId, array $data): void

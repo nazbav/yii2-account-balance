@@ -92,6 +92,15 @@ jobs:
           done
           exit 1
 
+      - name: Run syntax lint
+        run: vendor/bin/parallel-lint src tests
+
+      - name: Run PHP CS Fixer (dry-run)
+        run: vendor/bin/php-cs-fixer fix --dry-run --diff --verbose
+
+      - name: Run Rector (dry-run)
+        run: vendor/bin/rector process --dry-run --ansi
+
       - name: Run tests
         run: vendor/bin/phpunit -c phpunit.xml.dist
 

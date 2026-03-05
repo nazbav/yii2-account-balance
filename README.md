@@ -151,9 +151,13 @@ classDiagram
 ## Проверки
 
 ```bash
+vendor/bin/parallel-lint src tests
+vendor/bin/php-cs-fixer fix --dry-run --diff --verbose
+vendor/bin/rector process --dry-run --ansi
 vendor/bin/phpunit -c phpunit.xml.dist
 vendor/bin/phpstan analyse -c phpstan.neon --no-progress
 vendor/bin/psalm --taint-analysis --no-cache --output-format=console
+composer audit --locked
 ```
 
 Или одним скриптом через Composer:
@@ -161,6 +165,12 @@ vendor/bin/psalm --taint-analysis --no-cache --output-format=console
 ```bash
 composer qa
 ```
+
+Быстрые команды для локальной работы:
+
+- `composer lint:syntax` — синтаксическая проверка PHP-файлов;
+- `composer cs:check` / `composer cs:fix` — контроль и исправление стиля кода;
+- `composer rector:check` / `composer rector:fix` — автоматический рефакторинг и контроль архитектурных улучшений.
 
 Если глобальный `composer` не установлен:
 
@@ -174,7 +184,7 @@ Workflow: `.github/workflows/php.yml`
 
 - матрица PHP: `8.1` и `8.3`;
 - БД в CI: MySQL `8.0`;
-- проверки: `phpunit`, `phpstan` (уровень 8), `psalm --taint-analysis`, `composer audit`.
+- проверки: `parallel-lint`, `php-cs-fixer`, `rector`, `phpunit`, `phpstan` (уровень 8), `psalm --taint-analysis`, `composer audit`.
 
 ## Лицензия
 

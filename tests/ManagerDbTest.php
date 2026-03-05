@@ -2,12 +2,11 @@
 
 declare(strict_types=1);
 
-
 namespace nazbav\tests\unit\balance;
 
+use nazbav\balance\ManagerDb;
 use Yii;
 use yii\db\Query;
-use nazbav\balance\ManagerDb;
 
 /**
  * @group db
@@ -32,9 +31,10 @@ class ManagerDbTest extends TestCase
         $table = 'BalanceAccount';
         try {
             $db->createCommand()->dropTable($table)->execute();
-        } catch (\Throwable $e) {
+        } catch (\Throwable) {
             // Таблица может отсутствовать в новой базе.
         }
+
         $columns = [
             'id' => 'pk',
             'userId' => 'integer',
@@ -45,9 +45,10 @@ class ManagerDbTest extends TestCase
         $table = 'BalanceTransaction';
         try {
             $db->createCommand()->dropTable($table)->execute();
-        } catch (\Throwable $e) {
+        } catch (\Throwable) {
             // Таблица может отсутствовать в новой базе.
         }
+
         $columns = [
             'id' => 'pk',
             'date' => 'integer',
@@ -74,11 +75,12 @@ class ManagerDbTest extends TestCase
 
     // Набор тестов.
 
-    public function testIncrease()
+    public function testIncrease(): void
     {
         $manager = new ManagerDb();
 
         $manager->increase(1, 50);
+
         $transaction = $this->getLastTransaction();
         $this->assertEquals(50, $transaction['amount']);
 
@@ -90,7 +92,7 @@ class ManagerDbTest extends TestCase
     /**
      * @depends testIncrease
      */
-    public function testAutoCreateAccount()
+    public function testAutoCreateAccount(): void
     {
         $manager = new ManagerDb();
 
@@ -108,7 +110,7 @@ class ManagerDbTest extends TestCase
     /**
      * @depends testAutoCreateAccount
      */
-    public function testIncreaseAccountBalance()
+    public function testIncreaseAccountBalance(): void
     {
         $manager = new ManagerDb();
         $manager->autoCreateAccount = true;
@@ -132,7 +134,7 @@ class ManagerDbTest extends TestCase
     /**
      * @depends testIncrease
      */
-    public function testRevert()
+    public function testRevert(): void
     {
         $manager = new ManagerDb();
 
@@ -146,7 +148,7 @@ class ManagerDbTest extends TestCase
         $this->assertEquals(-$amount, $transaction['amount']);
     }
 
-    public function testTransferRejectsSameAccount()
+    public function testTransferRejectsSameAccount(): void
     {
         $manager = new ManagerDb();
 
@@ -154,7 +156,7 @@ class ManagerDbTest extends TestCase
         $manager->transfer(1, 1, 10);
     }
 
-    public function testForbidNegativeBalance()
+    public function testForbidNegativeBalance(): void
     {
         $manager = new ManagerDb();
         $manager->autoCreateAccount = true;
@@ -167,8 +169,8 @@ class ManagerDbTest extends TestCase
         try {
             $manager->decrease(['userId' => 100], 50);
             $this->fail('Ожидалось исключение о недостатке средств.');
-        } catch (\yii\base\InvalidArgumentException $e) {
-            $this->assertStringContainsString('Недостаточно средств', $e->getMessage());
+        } catch (\yii\base\InvalidArgumentException $invalidArgumentException) {
+            $this->assertStringContainsString('Недостаточно средств', $invalidArgumentException->getMessage());
         }
 
         $account = (new Query())->from('BalanceAccount')->andWhere(['userId' => 100])->one();
@@ -179,7 +181,7 @@ class ManagerDbTest extends TestCase
     /**
      * @depends testIncrease
      */
-    public function testCalculateBalance()
+    public function testCalculateBalance(): void
     {
         $manager = new ManagerDb();
 
@@ -195,7 +197,7 @@ class ManagerDbTest extends TestCase
      *
      * @depends testIncrease
      */
-    public function testSkipAutoIncrement()
+    public function testSkipAutoIncrement(): void
     {
         $manager = new ManagerDb();
 
@@ -205,7 +207,7 @@ class ManagerDbTest extends TestCase
             10,
             [
                 'id' => 123456789,
-            ]
+            ],
         );
         $transaction = $this->getLastTransaction();
         $this->assertStringContainsString('123456789', $transaction['data']);
