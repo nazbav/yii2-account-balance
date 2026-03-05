@@ -114,6 +114,7 @@ class ManagerDbTest extends TestCase
         $amount = 50;
         $manager->increase(['userId' => 1], $amount);
         $account = (new Query())->from('BalanceAccount')->andWhere(['userId' => 1])->one();
+        $this->assertIsArray($account);
 
         $this->assertEquals($amount, $account['balance']);
 
@@ -121,6 +122,7 @@ class ManagerDbTest extends TestCase
         $amount = 50;
         $manager->increase(['userId' => 1], $amount);
         $account = (new Query())->from('BalanceAccount')->andWhere(['userId' => 1])->one();
+        $this->assertIsArray($account);
         $this->assertEquals(100, $account['balance']);
     }
 

@@ -8,6 +8,7 @@
 namespace yii2tech\balance;
 
 use yii\base\Model;
+use yii\db\ActiveRecord;
 use yii\db\ActiveQuery;
 use yii\db\ActiveRecordInterface;
 use yii\db\BaseActiveRecord;
@@ -138,7 +139,7 @@ class ManagerActiveRecord extends ManagerDbTransaction
 
         /** @var class-string<BaseActiveRecord> $class */
         $class = $this->transactionClass;
-        /** @var ActiveQuery<BaseActiveRecord> $query */
+        /** @var ActiveQuery<ActiveRecord> $query */
         $query = $class::find();
 
         return $query
