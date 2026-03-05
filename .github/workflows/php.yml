@@ -53,8 +53,36 @@ jobs:
       - name: Allow Yii2 composer plugin
         run: composer config --no-plugins allow-plugins.yiisoft/yii2-composer true
 
+      - name: Cache Composer cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.composer/cache/files
+          key: ${{ runner.os }}-php-${{ matrix.php }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-php-${{ matrix.php }}-composer-
+
       - name: Install dependencies
-        run: composer install --no-interaction --prefer-dist --no-progress --no-plugins
+        run: |
+          set -euo pipefail
+
+          install_cmd="composer install --no-interaction --prefer-dist --no-progress"
+
+          for attempt in 1 2 3; do
+            echo "Попытка установки зависимостей: ${attempt}"
+            if ${install_cmd}; then
+              exit 0
+            fi
+
+            if [ "${attempt}" -eq 2 ]; then
+              echo "asset-packagist недоступен, переключаюсь на установку из lock без внешнего репозитория."
+              composer config --unset repositories.0 || true
+            fi
+
+            sleep $((attempt * 10))
+          done
+
+          echo "Не удалось установить зависимости после нескольких попыток."
+          exit 1
 
       - name: Wait for MySQL
         run: |
