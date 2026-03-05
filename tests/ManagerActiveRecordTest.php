@@ -493,6 +493,12 @@ class ManagerActiveRecordTest extends TestCase
         $secondId = $manager->createAccountPublic(['userId' => 901]);
 
         self::assertSame((string) $firstId, (string) $secondId);
+        $rows = BalanceAccount::find()
+            ->where(['userId' => 901])
+            ->asArray()
+            ->all();
+        self::assertCount(1, $rows);
+        self::assertSame((string) $firstId, (string) $rows[0]['id']);
     }
 
     public function testCreateAccountBypassesValidationRules(): void
@@ -592,7 +598,12 @@ class ManagerActiveRecordTest extends TestCase
         ]);
 
         self::assertNotNull($id);
-        self::assertSame(1, (int) (new \yii\db\Query())->from('StrictBalanceTransaction')->count('*'));
+        $rows = (new \yii\db\Query())
+            ->from('StrictBalanceTransaction')
+            ->all();
+        self::assertCount(1, $rows);
+        self::assertSame(3001, (int) $rows[0]['accountId']);
+        self::assertSame(25, (int) $rows[0]['amount']);
     }
 
     public function testCreateDbTransactionStartsAndReturnsTransaction(): void

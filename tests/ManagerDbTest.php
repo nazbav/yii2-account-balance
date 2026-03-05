@@ -476,6 +476,12 @@ class ManagerDbTest extends TestCase
         $secondId = $manager->createAccountPublic(['userId' => 901]);
 
         self::assertSame((string) $firstId, (string) $secondId);
+        $rows = (new Query())
+            ->from('BalanceAccount')
+            ->where(['userId' => 901])
+            ->all();
+        self::assertCount(1, $rows);
+        self::assertSame((string) $firstId, (string) $rows[0]['id']);
     }
 
     public function testCreateAccountReturnsJoinedCompositePrimaryKeys(): void
@@ -509,6 +515,12 @@ class ManagerDbTest extends TestCase
         $id = $manager->createAccountPublic(['tenantId' => 7, 'userId' => 17]);
 
         self::assertSame('7,17', $id);
+        $row = (new Query())
+            ->from('CompositeBalanceAccount')
+            ->where(['tenantId' => 7, 'userId' => 17])
+            ->one();
+        self::assertIsArray($row);
+        self::assertSame(0, (int) $row['balance']);
     }
 
     public function testFindAccountIdReadsPrimaryKeyColumnInsteadOfFirstSelectedColumn(): void
@@ -575,6 +587,12 @@ class ManagerDbTest extends TestCase
         ]);
 
         self::assertSame('44,cmp-44', $id);
+        $row = (new Query())
+            ->from('CompositeBalanceTransaction')
+            ->where(['accountId' => 44, 'operationId' => 'cmp-44'])
+            ->one();
+        self::assertIsArray($row);
+        self::assertSame(100, (int) $row['amount']);
     }
 
     public function testForbidNegativeBalanceDoesNotNeedMinimumForZeroAmount(): void
