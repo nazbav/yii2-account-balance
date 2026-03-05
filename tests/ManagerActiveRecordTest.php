@@ -61,11 +61,13 @@ class ManagerActiveRecordTest extends TestCase
      */
     protected function getLastTransaction()
     {
-        return BalanceTransaction::find()
+        $transaction = BalanceTransaction::find()
             ->orderBy(['id' => SORT_DESC])
             ->limit(1)
             ->asArray(true)
             ->one();
+        $this->assertIsArray($transaction);
+        return $transaction;
     }
 
     /**
@@ -74,8 +76,8 @@ class ManagerActiveRecordTest extends TestCase
     protected function createManager()
     {
         $manager = new ManagerActiveRecord();
-        $manager->accountClass = BalanceAccount::className();
-        $manager->transactionClass = BalanceTransaction::className();
+        $manager->accountClass = BalanceAccount::class;
+        $manager->transactionClass = BalanceTransaction::class;
         return $manager;
     }
 
@@ -124,6 +126,7 @@ class ManagerActiveRecordTest extends TestCase
         $amount = 50;
         $manager->increase(['userId' => 1], $amount);
         $account = BalanceAccount::find()->andWhere(['userId' => 1])->one();
+        $this->assertNotNull($account);
 
         $this->assertEquals($amount, $account['balance']);
     }

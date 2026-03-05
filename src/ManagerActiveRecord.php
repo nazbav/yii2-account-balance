@@ -138,7 +138,7 @@ class ManagerActiveRecord extends ManagerDbTransaction
 
         /** @var class-string<BaseActiveRecord> $class */
         $class = $this->transactionClass;
-        /** @var ActiveQuery $query */
+        /** @var ActiveQuery<BaseActiveRecord> $query */
         $query = $class::find();
 
         return $query
