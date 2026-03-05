@@ -43,6 +43,25 @@ abstract class ManagerDbTransaction extends Manager
 
     /**
      * @param array<string, mixed> $data
+     * @throws Exception
+     * @throws Throwable
+     */
+    public function decrease(mixed $account, int|float $amount, array $data = []): mixed
+    {
+        $this->beginDbTransaction();
+        try {
+            $result = parent::decrease($account, $amount, $data);
+            $this->commitDbTransaction();
+
+            return $result;
+        } catch (Throwable $throwable) {
+            $this->rollBackDbTransaction();
+            throw $throwable;
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $data
      * @return array<int, mixed>
      * @throws Exception
      * @throws Throwable

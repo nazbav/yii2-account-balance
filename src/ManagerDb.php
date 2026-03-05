@@ -10,6 +10,7 @@ use yii\base\NotSupportedException;
 use yii\db\Connection;
 use yii\db\Exception;
 use yii\db\Expression;
+use yii\db\IntegrityException;
 use yii\db\Query;
 use yii\db\TableSchema;
 use yii\db\Transaction;
@@ -96,6 +97,11 @@ class ManagerDb extends ManagerDbTransaction
      */
     protected function findAccountId(array $attributes): string|int|null
     {
+        $attributes = $this->filterAttributesByTableSchema($this->accountTable, $attributes);
+        if ($attributes === []) {
+            return null;
+        }
+
         $id = (new Query())
             ->select([$this->getAccountIdAttribute()])
             ->from($this->accountTable)
@@ -129,7 +135,23 @@ class ManagerDb extends ManagerDbTransaction
      */
     protected function createAccount(array $attributes): mixed
     {
-        $primaryKeys = $this->getDbConnection()->getSchema()->insert($this->accountTable, $attributes);
+        $attributes = $this->filterAttributesByTableSchema($this->accountTable, $attributes);
+        if ($attributes === []) {
+            throw new InvalidArgumentException(Manager::t('error.account_attributes_empty_after_filter'));
+        }
+
+        try {
+            $primaryKeys = $this->getDbConnection()->getSchema()->insert($this->accountTable, $attributes);
+        } catch (IntegrityException $integrityException) {
+            // При гонке на уникальном ключе счёт уже мог быть создан параллельным процессом.
+            $existingAccountId = $this->findAccountId($attributes);
+            if ($existingAccountId !== null) {
+                return $existingAccountId;
+            }
+
+            throw $integrityException;
+        }
+
         if (!is_array($primaryKeys) || $primaryKeys === []) {
             throw new InvalidConfigException(Manager::t('error.account_primary_key_not_received'));
         }
@@ -291,5 +313,24 @@ class ManagerDb extends ManagerDbTransaction
         }
 
         return $columnName;
+    }
+
+    /**
+     * @param array<string, mixed> $attributes
+     * @return array<string, mixed>
+     * @throws InvalidConfigException
+     */
+    private function filterAttributesByTableSchema(string $tableName, array $attributes): array
+    {
+        $allowedAttributes = [];
+        foreach ($this->getRequiredTableSchema($tableName)->columns as $column) {
+            $allowedAttributes[] = $column->name;
+        }
+
+        return array_filter(
+            $attributes,
+            static fn (string $attributeName): bool => in_array($attributeName, $allowedAttributes, true),
+            ARRAY_FILTER_USE_KEY,
+        );
     }
 }

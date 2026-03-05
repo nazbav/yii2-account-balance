@@ -11,6 +11,7 @@ use yii\db\ActiveRecord;
 use yii\db\BaseActiveRecord;
 use yii\db\Exception;
 use yii\db\Expression;
+use yii\db\IntegrityException;
 use yii\db\TableSchema;
 use yii\db\Transaction;
 
@@ -42,6 +43,12 @@ class ManagerActiveRecord extends ManagerDbTransaction
     protected function findAccountId(array $attributes): mixed
     {
         $class = $this->ensureActiveRecordClass($this->accountClass, 'accountClass');
+        $attributeModel = new $class();
+        $attributes = $this->filterWritableAttributes($attributeModel, $attributes);
+        if ($attributes === []) {
+            return null;
+        }
+
         $model = $class::find()->andWhere($attributes)->one();
 
         return $model instanceof BaseActiveRecord ? $model->getPrimaryKey() : null;
@@ -70,8 +77,23 @@ class ManagerActiveRecord extends ManagerDbTransaction
     {
         $class = $this->ensureActiveRecordClass($this->accountClass, 'accountClass');
         $model = new $class();
-        $model->setAttributes($this->filterWritableAttributes($model, $attributes), false);
-        $model->save(false);
+        $attributes = $this->filterWritableAttributes($model, $attributes);
+        if ($attributes === []) {
+            throw new InvalidArgumentException(Manager::t('error.account_attributes_empty_after_filter'));
+        }
+
+        $model->setAttributes($attributes, false);
+        try {
+            $model->save(false);
+        } catch (IntegrityException $integrityException) {
+            // При гонке на уникальном ключе счёт уже мог быть создан параллельным процессом.
+            $existingAccountId = $this->findAccountId($attributes);
+            if ($existingAccountId !== null) {
+                return $existingAccountId;
+            }
+
+            throw $integrityException;
+        }
 
         return $model->getPrimaryKey();
     }

@@ -1,12 +1,14 @@
-# Руководство: быстрый старт и базовая интеграция
+# Быстрый старт
 
-## 1. Подключение
+Документ для первого внедрения в проект на Yii2 с MySQL.
+
+## 1. Установка
 
 ```bash
 composer require nazbav/yii2-account-balance --prefer-dist
 ```
 
-## 2. Конфигурация компонента
+## 2. Подключение компонента `ManagerDb`
 
 ```php
 use nazbav\balance\ManagerDb;
@@ -15,17 +17,18 @@ return [
     'components' => [
         'balanceManager' => [
             'class' => ManagerDb::class,
+            'db' => 'db',
             'accountTable' => '{{%balance_account}}',
             'transactionTable' => '{{%balance_transaction}}',
             'accountLinkAttribute' => 'accountId',
             'extraAccountLinkAttribute' => 'extraAccountId',
+            'accountBalanceAttribute' => 'balance',
             'amountAttribute' => 'amount',
             'dateAttribute' => 'createdAt',
             'dataAttribute' => 'data',
-            'accountBalanceAttribute' => 'balance',
             'autoCreateAccount' => true,
 
-            // Базовая защита бизнес-операций.
+            // Строгий профиль для продакшна.
             'requirePositiveAmount' => true,
             'forbidTransferToSameAccount' => true,
             'forbidNegativeBalance' => true,
@@ -35,28 +38,18 @@ return [
 ];
 ```
 
-Альтернатива через объект правил:
-
-```php
-use nazbav\balance\BalanceRules;
-
-Yii::$app->balanceManager->setBalanceRules(BalanceRules::strict());
-// или
-Yii::$app->balanceManager->enableStrictMode();
-```
-
 ## 3. Минимальная схема MySQL
 
 ```sql
 CREATE TABLE balance_account (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   userId BIGINT UNSIGNED NOT NULL,
-  walletType VARCHAR(32) NOT NULL,
+  walletType VARCHAR(64) NOT NULL,
   balance DECIMAL(19,4) NOT NULL DEFAULT 0,
   createdAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
-  UNIQUE KEY uq_user_wallet (userId, walletType)
+  UNIQUE KEY uq_balance_account_user_wallet (userId, walletType)
 ) ENGINE=InnoDB;
 
 CREATE TABLE balance_transaction (
@@ -67,9 +60,10 @@ CREATE TABLE balance_transaction (
   amount DECIMAL(19,4) NOT NULL,
   data JSON NULL,
   PRIMARY KEY (id),
-  KEY idx_account_date (accountId, createdAt),
-  KEY idx_extra_account (extraAccountId),
-  CONSTRAINT fk_transaction_account FOREIGN KEY (accountId) REFERENCES balance_account(id)
+  KEY idx_balance_transaction_account_date (accountId, createdAt),
+  KEY idx_balance_transaction_extra_account (extraAccountId),
+  CONSTRAINT fk_balance_transaction_account
+    FOREIGN KEY (accountId) REFERENCES balance_account(id)
 ) ENGINE=InnoDB;
 ```
 
@@ -78,40 +72,56 @@ CREATE TABLE balance_transaction (
 ```php
 $manager = Yii::$app->balanceManager;
 
-// Начисление.
-$incomeId = $manager->increase(['userId' => 1001, 'walletType' => 'bonus'], 300, [
-    'operationType' => 'purchase_reward',
-    'orderId' => 'ORD-100500',
-]);
+$incomeId = $manager->increase(
+    ['userId' => 1001, 'walletType' => 'bonus_available'],
+    500,
+    [
+        'operationId' => 'purchase:100500:bonus',
+        'operationType' => 'purchase_bonus',
+        'orderId' => 100500,
+    ]
+);
 
-// Списание.
-$expenseId = $manager->decrease(['userId' => 1001, 'walletType' => 'bonus'], 120, [
-    'operationType' => 'redeem',
-    'redeemId' => 'RDM-7788',
-]);
+$transferIds = $manager->transfer(
+    ['userId' => 1001, 'walletType' => 'bonus_available'],
+    ['userId' => 1001, 'walletType' => 'bonus_spent'],
+    120,
+    [
+        'operationId' => 'redeem:100500',
+        'operationType' => 'redeem',
+    ]
+);
 
-// Откат ошибочной операции.
-$manager->revert($expenseId, [
-    'operationType' => 'manual_fix',
-    'reason' => 'Исправление по тикету support',
+$manager->revert($transferIds[0], [
+    'operationType' => 'manual_correction',
+    'reason' => 'Отмена списания оператором',
 ]);
 ```
 
-## 5. Что сделать сразу в промышленной среде
+## 5. Подключение через `ManagerActiveRecord`
 
-1. Включить уникальный `operationId` в `$data` для идемпотентности на уровне приложения.
-2. Добавить бизнес-лимиты на период (день/неделя/месяц) по сумме начислений и списаний.
-3. Логировать риск-флаги (`riskScore`, `ipHash`, `deviceHash`, `geo`).
-4. Для реферальных программ и крупных операций использовать отложенное подтверждение.
+```php
+use nazbav\balance\ManagerActiveRecord;
 
-## 6. Базовая проверка после интеграции
-
-```bash
-composer qa
+return [
+    'components' => [
+        'balanceManager' => [
+            'class' => ManagerActiveRecord::class,
+            'accountClass' => app\models\BalanceAccount::class,
+            'transactionClass' => app\models\BalanceTransaction::class,
+            'accountBalanceAttribute' => 'balance',
+            'requirePositiveAmount' => true,
+            'forbidTransferToSameAccount' => true,
+            'forbidNegativeBalance' => true,
+            'minimumAllowedBalance' => 0,
+        ],
+    ],
+];
 ```
 
-Если в окружении нет глобального `composer`:
+## 6. Рекомендуемые защитные настройки использования
 
-```bash
-php composer.phar qa
-```
+1. Вводить уникальный `operationId` для каждой внешней операции.
+2. Хранить таблицу идемпотентности с уникальным индексом по `operationId`.
+3. Выполнять доменную антифрод-проверку до вызова `increase/decrease/transfer`.
+4. Разделять кошельки по назначению (`pending`, `available`, `spent`, `qualifying`).

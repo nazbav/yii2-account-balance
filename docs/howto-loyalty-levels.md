@@ -1,60 +1,86 @@
-# Практика: уровни и программы лояльности
+# Практика: уровни лояльности
 
-Этот документ показывает, как использовать библиотеку для модели с несколькими кошельками лояльности с уровнями (Bronze/Silver/Gold/Platinum).
+Документ показывает, как построить многоуровневую программу лояльности поверх библиотеки.
 
-## Целевая модель
+## 1. Рекомендуемая модель кошельков
 
-Рекомендуется вести минимум три кошелька на клиента:
-
-- `bonus_pending` — начислено, но ещё не подтверждено (окно возврата/фрода);
-- `bonus_available` — доступно к списанию;
+- `bonus_pending` — начислено, но еще не доступно;
+- `bonus_available` — доступно для списания;
+- `bonus_spent` — аналитический кошелек списаний;
 - `qualifying_points` — квалификационные баллы для уровня.
 
-## Пороговые уровни (пример)
+## 2. Правила уровней (пример)
 
-- Bronze: `0+`
-- Silver: `1000+`
-- Gold: `5000+`
-- Platinum: `15000+`
+| Уровень | Диапазон qualifying points | Множитель бонуса |
+|---|---:|---:|
+| Bronze | 0 - 999 | 1.00 |
+| Silver | 1000 - 4999 | 1.20 |
+| Gold | 5000 - 14999 | 1.50 |
+| Platinum | 15000+ | 2.00 |
 
-## Базовый поток начисления за покупку
+## 3. Начисление за заказ
 
 ```php
-$manager = Yii::$app->balanceManager;
+$multiplier = match ($tier) {
+    'platinum' => 2.0,
+    'gold' => 1.5,
+    'silver' => 1.2,
+    default => 1.0,
+};
 
-$userFilter = ['userId' => $userId];
+$baseBonus = round($orderAmount * 0.05, 2);
+$finalBonus = round($baseBonus * $multiplier, 2);
 
-// 1) Начисление в pending.
-$pendingTx = $manager->increase($userFilter + ['walletType' => 'bonus_pending'], $bonusAmount, [
-    'operationType' => 'purchase_bonus_pending',
-    'orderId' => $orderId,
-    'tierAtOperation' => $currentTier,
-]);
+$manager->increase(
+    ['userId' => $userId, 'walletType' => 'bonus_pending'],
+    $finalBonus,
+    [
+        'operationId' => "order:$orderId:bonus_pending",
+        'operationType' => 'purchase_bonus_pending',
+        'tierAtPurchase' => $tier,
+        'multiplier' => $multiplier,
+    ]
+);
 
-// 2) Начисление в qualifying points (сразу).
-$manager->increase($userFilter + ['walletType' => 'qualifying_points'], $qualifyingAmount, [
-    'operationType' => 'qualifying_accrual',
-    'orderId' => $orderId,
-]);
+$manager->increase(
+    ['userId' => $userId, 'walletType' => 'qualifying_points'],
+    (int) floor($orderAmount),
+    [
+        'operationId' => "order:$orderId:qualifying",
+        'operationType' => 'qualifying_points_accrual',
+    ]
+);
 ```
 
-## Подтверждение pending -> available
-
-После окна риска (например, 14 дней) переводим сумму из `bonus_pending` в `bonus_available`.
+## 4. Освобождение pending-бонусов
 
 ```php
 $manager->transfer(
     ['userId' => $userId, 'walletType' => 'bonus_pending'],
     ['userId' => $userId, 'walletType' => 'bonus_available'],
-    $confirmAmount,
+    $releaseAmount,
     [
-        'operationType' => 'pending_release',
-        'sourceOperationId' => $operationId,
+        'operationId' => "order:$orderId:bonus_release",
+        'operationType' => 'bonus_release',
     ]
 );
 ```
 
-## Повышение уровня
+## 5. Списание бонусов в заказ
+
+```php
+$manager->transfer(
+    ['userId' => $userId, 'walletType' => 'bonus_available'],
+    ['userId' => $userId, 'walletType' => 'bonus_spent'],
+    $redeemAmount,
+    [
+        'operationId' => "order:$orderId:bonus_redeem",
+        'operationType' => 'bonus_redeem',
+    ]
+);
+```
+
+## 6. Пересчет уровня
 
 ```php
 $qualifyingBalance = $manager->calculateBalance([
@@ -70,37 +96,23 @@ $newTier = match (true) {
 };
 ```
 
-## Списание с ограничением перерасхода
+## 7. Edge-кейсы, которые нужно закрыть
 
-В конфигурации должен быть включён запрет отрицательного баланса:
+1. Повторное событие оплаты (повтор webhook).
+2. Частичный возврат заказа.
+3. Полный возврат после release бонусов.
+4. Изменение уровня между начислением и release.
+5. Ручная корректировка оператора.
 
-```php
-'forbidNegativeBalance' => true,
-'minimumAllowedBalance' => 0,
-'accountBalanceAttribute' => 'balance',
-```
-
-Тогда списание будет отклонено автоматически, если баланса недостаточно.
-
-## Годовой сброс квалификации (пример)
-
-```php
-// Сохраняем историю уровня вне balance-таблиц (в своей доменной таблице).
-// Затем обнуляем/пересчитываем qualifying points по вашей политике.
-$manager->decrease(
-    ['userId' => $userId, 'walletType' => 'qualifying_points'],
-    $currentQualifyingBalance,
-    ['operationType' => 'yearly_reset']
-);
-```
-
-## Диаграмма жизненного цикла бонусов
+## 8. Диаграмма цикла лояльности
 
 ```mermaid
 flowchart LR
-  A[Покупка] --> B[Начисление в bonus_pending]
-  B --> C{Окно риска прошло?}
-  C -- Да --> D[Перевод в bonus_available]
-  C -- Нет --> E[Ожидание]
-  C -- Фрод/Возврат --> F[Откат или списание pending]
+    A[Покупка] --> B[Начисление в bonus_pending]
+    A --> C[Начисление qualifying_points]
+    C --> D[Пересчет уровня]
+    B --> E{Окно риска}
+    E -- Пройдено --> F[Перевод в bonus_available]
+    E -- Фрод/Возврат --> G[Откат/revert]
+    F --> H[Списание в бонусный платеж]
 ```

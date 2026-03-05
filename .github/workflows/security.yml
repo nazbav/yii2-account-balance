@@ -2,9 +2,9 @@ name: Security Scans
 
 on:
   push:
-    branches: ["**"]
+    branches: ["master"]
   pull_request:
-    branches: ["**"]
+    branches: ["master"]
   schedule:
     - cron: "15 3 * * 1"
   workflow_dispatch:
@@ -43,7 +43,7 @@ jobs:
           sarif_file: gitleaks.sarif
 
   codeql:
-    name: CodeQL (PHP)
+    name: CodeQL (GitHub Actions)
     runs-on: ubuntu-latest
     permissions:
       actions: read
@@ -52,7 +52,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: ["php"]
+        language: ["actions"]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

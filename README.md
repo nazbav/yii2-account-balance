@@ -1,32 +1,28 @@
-<h1 align="center">nazbav/yii2-account-balance</h1>
+# nazbav/yii2-account-balance
 
-<p align="center">
-  Yii2-расширение для учёта балансов и транзакций по модели дебет/кредит.
-  Подходит для кошельков, бонусов, уровней лояльности, реферальных наград и внутренних расчётов.
-</p>
+Yii2-расширение для учёта баланса и транзакций по модели дебет/кредит.
+Библиотека подходит для денежных кошельков, бонусов, программ лояльности, реферальных начислений и внутренних взаиморасчётов.
 
-## Что это
+## Назначение
 
-`nazbav/yii2-account-balance` даёт прикладной слой для безопасных операций:
+Расширение предоставляет единый контракт операций:
 
 - `increase()` — начисление;
 - `decrease()` — списание;
-- `transfer()` — перевод между счётами;
-- `revert()` — откат транзакции.
+- `transfer()` — перевод между счетами;
+- `revert()` — откат транзакции;
+- `calculateBalance()` — расчёт баланса по истории операций.
 
-Поддерживаются:
+Поддерживаются два варианта хранения:
 
-- `ManagerDb` (прямой SQL, MySQL-ориентированный сценарий);
-- `ManagerActiveRecord` (через ActiveRecord);
-- i18n-сообщения;
-- базовые антифрод-контроли и ограничения бизнес-логики.
+- `ManagerDb` — прямые SQL-операции через `yii\db\Connection` (рекомендуется для MySQL);
+- `ManagerActiveRecord` — интеграция через `yii\db\ActiveRecord`.
 
-## Требования
+## Технические требования
 
-- PHP `^8.1` (проверено на `8.1` и `8.3`);
-- Yii2 `~2.0.14`.
-
-Для сценария с `ManagerDb` рекомендуется MySQL `8.0+` (InnoDB, `DECIMAL`, `JSON`).
+- PHP `^8.1` (тестируется в CI на `8.1` и `8.3`);
+- Yii2 `~2.0.14`;
+- для промышленного режима с `ManagerDb` рекомендуется MySQL `8.0+` (InnoDB).
 
 ## Установка
 
@@ -34,7 +30,7 @@
 composer require nazbav/yii2-account-balance --prefer-dist
 ```
 
-## Быстрый старт
+## Быстрый пример конфигурации
 
 ```php
 use nazbav\balance\ManagerDb;
@@ -43,16 +39,18 @@ return [
     'components' => [
         'balanceManager' => [
             'class' => ManagerDb::class,
+            'db' => 'db',
             'accountTable' => '{{%balance_account}}',
             'transactionTable' => '{{%balance_transaction}}',
             'accountLinkAttribute' => 'accountId',
+            'extraAccountLinkAttribute' => 'extraAccountId',
+            'accountBalanceAttribute' => 'balance',
             'amountAttribute' => 'amount',
             'dateAttribute' => 'createdAt',
             'dataAttribute' => 'data',
-            'accountBalanceAttribute' => 'balance',
-            'extraAccountLinkAttribute' => 'extraAccountId',
+            'autoCreateAccount' => true,
 
-            // Рекомендуемые защитные настройки для денежных и бонусных сценариев.
+            // Рекомендуемый профиль безопасности.
             'requirePositiveAmount' => true,
             'forbidTransferToSameAccount' => true,
             'forbidNegativeBalance' => true,
@@ -62,38 +60,54 @@ return [
 ];
 ```
 
-Пример операций:
+## Быстрый пример операций
 
 ```php
 $manager = Yii::$app->balanceManager;
 
-$manager->increase(10, 500, ['reason' => 'Пополнение']);
-$manager->decrease(10, 100, ['reason' => 'Списание']);
-$pair = $manager->transfer(10, 20, 250, ['orderId' => 777]);
-$manager->revert($pair[0], ['reason' => 'Отмена операции']);
+$incomeTxId = $manager->increase(
+    ['userId' => 101, 'walletType' => 'bonus_available'],
+    300,
+    [
+        'operationId' => 'order:5001:bonus',
+        'operationType' => 'purchase_bonus',
+        'orderId' => 5001,
+    ]
+);
+
+$expenseTxId = $manager->decrease(
+    ['userId' => 101, 'walletType' => 'bonus_available'],
+    120,
+    [
+        'operationId' => 'order:5001:redeem',
+        'operationType' => 'order_redeem',
+    ]
+);
+
+$manager->revert($expenseTxId, [
+    'operationType' => 'manual_fix',
+    'reason' => 'Корректировка по тикету поддержки',
+]);
 ```
 
-## Полная документация
+## Что гарантирует библиотека
 
-- [Навигация по документации](docs/README.md)
-- [Руководство: быстрый старт и базовая интеграция](docs/tutorial-quick-start.md)
-- [Практика: уровни и программы лояльности](docs/howto-loyalty-levels.md)
-- [Практика: реферальная программа](docs/howto-referral-program.md)
-- [Сложные примеры: начисления, холды, возвраты, уровни](docs/examples-advanced-scenarios.md)
-- [Справочник: параметры и контракты](docs/reference-configuration.md)
-- [Разбор: риски, антифрод и защита бизнес-логики](docs/explanation-fraud-controls.md)
+- транзакционный контур для `increase()/transfer()/revert()`;
+- транзакционный контур для `decrease()` в `ManagerDbTransaction`;
+- проверка суммы на числовой тип и конечность;
+- опциональный запрет суммы `<= 0`;
+- опциональный запрет перевода между одинаковыми счетами;
+- опциональная защита от отрицательного баланса;
+- i18n-сообщения в категории `nazbav.balance`;
+- безопасный режим `PhpSerializer` по умолчанию (`allowed_classes=false`).
 
-## Отдельно о реферальной программе
+## Что обязан делать доменный слой приложения
 
-В документации добавлен отдельный прикладной кейс реферальной программы:
-
-- двусторонняя награда (пригласивший + приглашённый);
-- отложенная активация награды после окна риска;
-- защита от саморефералов и дублей;
-- лимиты наград на период;
-- ручная проверка спорных кейсов.
-
-См. [Практика: реферальная программа](docs/howto-referral-program.md).
+- идемпотентность внешних операций (уникальный `operationId`);
+- антифрод-скоринг и лимиты (по сумме, частоте, сегменту клиента);
+- правила реферальной программы (саморефералы, мультиаккаунты, окна риска);
+- процесс ручной проверки спорных операций;
+- журналирование риск-событий и алерты.
 
 ## Архитектура
 
@@ -111,80 +125,48 @@ classDiagram
     class ManagerDbTransaction
     class ManagerDb
     class ManagerActiveRecord
+    class BalanceRules
 
     ManagerInterface <|.. Manager
     Manager <|-- ManagerDbTransaction
     ManagerDbTransaction <|-- ManagerDb
     ManagerDbTransaction <|-- ManagerActiveRecord
+    Manager ..> BalanceRules
 ```
 
-## i18n
+## Сквозной поток операции
 
-Категория сообщений: `nazbav.balance`
+```mermaid
+sequenceDiagram
+    participant API as Внешний API
+    participant Domain as Доменный сервис
+    participant Manager as Balance Manager
+    participant DB as MySQL
 
-Файлы переводов:
-
-- `messages/ru/nazbav.balance.php`
-- `messages/en/nazbav.balance.php`
-
-Базовый язык исходных сообщений расширения: `ru-RU` (`sourceLanguage` в `Bootstrap` и `Manager`).
-
-## Безопасность
-
-Базовые меры в библиотеке:
-
-- операции записи выполняются в транзакции;
-- проверка суммы (`requirePositiveAmount`), запрет перевода на тот же счёт;
-- защита от перерасхода через `forbidNegativeBalance` и `minimumAllowedBalance`;
-- атомарные обновления баланса в `ManagerDb`/`ManagerActiveRecord`;
-- безопасная сериализация (по умолчанию защита от внедрения объектов);
-- статический анализ (`phpstan`), taint-анализ (`psalm`), проверка зависимостей.
-
-Подробно: [Разбор: риски, антифрод и защита бизнес-логики](docs/explanation-fraud-controls.md).
-
-## Проверки
-
-```bash
-vendor/bin/parallel-lint src tests
-vendor/bin/php-cs-fixer fix --dry-run --diff --verbose
-vendor/bin/rector process --dry-run --ansi
-vendor/bin/phpunit -c phpunit.xml.dist
-vendor/bin/phpstan analyse -c phpstan.neon --no-progress
-vendor/bin/psalm --taint-analysis --no-cache --output-format=console
-composer audit --locked
+    API->>Domain: Запрос операции (operationId, account, amount)
+    Domain->>Domain: Идемпотентность + лимиты + риск
+    Domain->>Manager: increase/transfer/revert
+    Manager->>DB: BEGIN
+    Manager->>DB: INSERT balance_transaction
+    Manager->>DB: UPDATE balance_account
+    DB-->>Manager: COMMIT
+    Manager-->>Domain: transactionId
+    Domain-->>API: Результат
 ```
 
-Или одним скриптом через Composer:
+## Полная документация
 
-```bash
-composer qa
-```
-
-Быстрые команды для локальной работы:
-
-- `composer lint:syntax` — синтаксическая проверка PHP-файлов;
-- `composer cs:check` / `composer cs:fix` — контроль и исправление стиля кода;
-- `composer rector:check` / `composer rector:fix` — автоматический рефакторинг и контроль архитектурных улучшений.
-- `composer analyse` — `phpstan` с `strict-rules` и `deprecation-rules`.
-
-Если глобальный `composer` не установлен:
-
-```bash
-php composer.phar qa
-```
-
-## CI
-
-Workflows:
-
-- `.github/workflows/php.yml`
-  - матрица PHP: `8.1` и `8.3`;
-  - БД в CI: MySQL `8.0`;
-  - проверки: `parallel-lint`, `php-cs-fixer`, `rector`, `phpunit`, `phpstan` (уровень 8), `psalm --taint-analysis`, `composer audit`, `dependency-review`, `actionlint`.
-- `.github/workflows/security.yml`
-  - `gitleaks` (поиск секретов);
-  - `CodeQL` для GitHub Actions workflow-кода.
+- [Навигация по документации](docs/README.md)
+- [Быстрый старт](docs/tutorial-quick-start.md)
+- [Архитектура и потоки данных](docs/architecture-and-data-flow.md)
+- [Справочник конфигурации и API](docs/reference-configuration.md)
+- [Фактическая матрица поведения](docs/reference-behavior-matrix.md)
+- [Практика: уровни лояльности](docs/howto-loyalty-levels.md)
+- [Практика: реферальная программа](docs/howto-referral-program.md)
+- [Сложные прикладные сценарии](docs/examples-advanced-scenarios.md)
+- [Модель угроз и антифрод-контроли](docs/explanation-fraud-controls.md)
+- [FAQ и диагностика](docs/faq-and-troubleshooting.md)
 
 ## Лицензия
 
-BSD-3-Clause. См. [LICENSE.md](LICENSE.md).
+BSD-3-Clause. Подробности: [LICENSE.md](LICENSE.md).

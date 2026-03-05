@@ -1,38 +1,58 @@
-# Документация проекта
+# Документация `nazbav/yii2-account-balance`
 
-Этот раздел организован по практической структуре: от быстрого старта к прикладным сценариям и справочнику.
+Документация сфокусирована на самой библиотеке: архитектура, API, правила безопасности и прикладные кейсы использования.
 
-## С чего начать
+## Карта документации
 
-1. [Руководство: быстрый старт и базовая интеграция](tutorial-quick-start.md)
-2. [Справочник: параметры и контракты](reference-configuration.md)
+1. [Быстрый старт](tutorial-quick-start.md)
+2. [Архитектура и потоки данных](architecture-and-data-flow.md)
+3. [Справочник конфигурации и API](reference-configuration.md)
+4. [Фактическая матрица поведения](reference-behavior-matrix.md)
+5. [Практика: уровни лояльности](howto-loyalty-levels.md)
+6. [Практика: реферальная программа](howto-referral-program.md)
+7. [Сложные прикладные сценарии](examples-advanced-scenarios.md)
+8. [Модель угроз и антифрод-контроли](explanation-fraud-controls.md)
+9. [FAQ и диагностика](faq-and-troubleshooting.md)
 
-## Прикладные задачи
+## Быстрый навигационный граф
 
-- [Практика: уровни и программы лояльности](howto-loyalty-levels.md)
-- [Практика: реферальная программа](howto-referral-program.md)
-- [Сложные примеры: начисления, холды, возвраты, уровни](examples-advanced-scenarios.md)
+```mermaid
+flowchart TD
+    A[Старт] --> B[tutorial-quick-start.md]
+    B --> C[reference-configuration.md]
+    C --> L[reference-behavior-matrix.md]
+    C --> D{Прикладная задача}
+    D --> E[Лояльность]
+    D --> F[Реферальная программа]
+    D --> G[Сложные сценарии]
+    D --> H[Антифрод и безопасность]
+    E --> E1[howto-loyalty-levels.md]
+    F --> F1[howto-referral-program.md]
+    G --> G1[examples-advanced-scenarios.md]
+    H --> H1[explanation-fraud-controls.md]
+    C --> K[faq-and-troubleshooting.md]
+```
 
-## Риски и безопасность
+## Матрица покрытия вопросов
 
-- [Разбор: риски, антифрод и защита бизнес-логики](explanation-fraud-controls.md)
+| Вопрос | Где искать ответ |
+|---|---|
+| Как подключить и запустить за 30 минут? | `tutorial-quick-start.md` |
+| Какие есть параметры и их точные эффекты? | `reference-configuration.md` |
+| Где описано фактическое поведение без допущений? | `reference-behavior-matrix.md` |
+| Как устроена атомарность и транзакции? | `architecture-and-data-flow.md` |
+| Как безопасно внедрить программу лояльности? | `howto-loyalty-levels.md` |
+| Как внедрить реферальную программу с антифродом? | `howto-referral-program.md` |
+| Какие edge-case сценарии учитывать? | `examples-advanced-scenarios.md` |
+| Какие угрозы и контроли обязательны? | `explanation-fraud-controls.md` |
+| Что делать при типовых ошибках библиотеки? | `faq-and-troubleshooting.md` |
 
-## Что где искать
+## Совместимость
 
-- Если нужно быстро запустить компонент: `tutorial-quick-start.md`.
-- Если нужно внедрить сложную механику (уровни, отложенные начисления, реферальные сценарии): `howto-*` и `examples-advanced-scenarios.md`.
-- Если нужно проверить параметры, события и ограничения: `reference-configuration.md`.
-- Если нужно выстроить контроль мошенничества: `explanation-fraud-controls.md`.
+- PHP: `8.1`, `8.3`.
+- Yii2: `~2.0.14`.
 
-## Проверки качества
+## Принципы актуальности
 
-- Локальный запуск полного набора проверок: `composer qa`.
-- Состав набора: `parallel-lint`, `php-cs-fixer`, `rector`, `phpunit`, `phpstan` (уровень 8 + strict/deprecation rules), `psalm --taint-analysis`, `composer audit`.
-- Для автоисправлений доступны команды: `composer cs:fix` и `composer rector:fix`.
-
-## CI и релизы
-
-- Workflow CI: `.github/workflows/php.yml`.
-- Security workflow: `.github/workflows/security.yml`.
-- Матрица CI: PHP `8.1` и `8.3`, MySQL `8.0`.
-- История изменений: `CHANGELOG.md`.
+- Документация основана на текущем коде ветки `master`.
+- Любое изменение публичного поведения библиотеки сопровождается обновлением соответствующего раздела.

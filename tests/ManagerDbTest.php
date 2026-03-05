@@ -41,6 +41,7 @@ class ManagerDbTest extends TestCase
             'balance' => 'integer DEFAULT 0',
         ];
         $db->createCommand()->createTable($table, $columns)->execute();
+        $db->createCommand()->createIndex('uq_balance_account_user_id', $table, ['userId'], true)->execute();
 
         $table = 'BalanceTransaction';
         try {
@@ -176,6 +177,54 @@ class ManagerDbTest extends TestCase
         $account = (new Query())->from('BalanceAccount')->andWhere(['userId' => 100])->one();
         self::assertIsArray($account);
         self::assertEquals(30, $account['balance']);
+    }
+
+    public function testDecreaseRollsBackBalanceWhenTransactionInsertFails(): void
+    {
+        $manager = new ManagerDb();
+        $manager->autoCreateAccount = true;
+        $manager->accountBalanceAttribute = 'balance';
+
+        $manager->increase(['userId' => 777], 50);
+
+        $manager->transactionTable = '{{%MissingBalanceTransactionTable}}';
+        try {
+            $manager->decrease(['userId' => 777], 10);
+            self::fail('Ожидалось исключение при отсутствии таблицы транзакций.');
+        } catch (\yii\base\InvalidConfigException) {
+            // Ожидаемая ветка.
+        }
+
+        $account = (new Query())->from('BalanceAccount')->andWhere(['userId' => 777])->one();
+        self::assertIsArray($account);
+        self::assertEquals(50, $account['balance']);
+    }
+
+    public function testAutoCreateAccountRejectsUnknownFilterAttributes(): void
+    {
+        $manager = new ManagerDb();
+        $manager->autoCreateAccount = true;
+
+        $this->expectException('yii\base\InvalidArgumentException');
+        $manager->increase(['unknownAttr' => 1], 10);
+    }
+
+    public function testCreateAccountReturnsExistingIdOnDuplicateKeyRace(): void
+    {
+        $manager = new class () extends ManagerDb {
+            /**
+             * @param array<string, mixed> $attributes
+             */
+            public function createAccountPublic(array $attributes): mixed
+            {
+                return $this->createAccount($attributes);
+            }
+        };
+
+        $firstId = $manager->createAccountPublic(['userId' => 901]);
+        $secondId = $manager->createAccountPublic(['userId' => 901]);
+
+        self::assertSame((string) $firstId, (string) $secondId);
     }
 
     /**

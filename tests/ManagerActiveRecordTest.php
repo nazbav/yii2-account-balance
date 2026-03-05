@@ -42,6 +42,7 @@ class ManagerActiveRecordTest extends TestCase
             'balance' => 'integer DEFAULT 0',
         ];
         $db->createCommand()->createTable($table, $columns)->execute();
+        $db->createCommand()->createIndex('uq_balance_account_user_id', $table, ['userId'], true)->execute();
 
         $table = 'BalanceTransaction';
         try {
@@ -181,6 +182,56 @@ class ManagerActiveRecordTest extends TestCase
         $account = BalanceAccount::find()->andWhere(['userId' => 100])->one();
         self::assertNotNull($account);
         self::assertEquals(30, $account['balance']);
+    }
+
+    public function testDecreaseRollsBackBalanceWhenTransactionModelIsInvalid(): void
+    {
+        $manager = $this->createManager();
+        $manager->autoCreateAccount = true;
+        $manager->accountBalanceAttribute = 'balance';
+
+        $manager->increase(['userId' => 777], 50);
+
+        $manager->transactionClass = \stdClass::class;
+        try {
+            $manager->decrease(['userId' => 777], 10);
+            self::fail('Ожидалось исключение при неверном классе транзакций.');
+        } catch (\yii\base\InvalidConfigException) {
+            // Ожидаемая ветка.
+        }
+
+        $account = BalanceAccount::find()->andWhere(['userId' => 777])->one();
+        self::assertNotNull($account);
+        self::assertEquals(50, $account['balance']);
+    }
+
+    public function testAutoCreateAccountRejectsUnknownFilterAttributes(): void
+    {
+        $manager = $this->createManager();
+        $manager->autoCreateAccount = true;
+
+        $this->expectException('yii\base\InvalidArgumentException');
+        $manager->increase(['unknownAttr' => 1], 10);
+    }
+
+    public function testCreateAccountReturnsExistingIdOnDuplicateKeyRace(): void
+    {
+        $manager = new class () extends ManagerActiveRecord {
+            /**
+             * @param array<string, mixed> $attributes
+             */
+            public function createAccountPublic(array $attributes): mixed
+            {
+                return $this->createAccount($attributes);
+            }
+        };
+        $manager->accountClass = BalanceAccount::class;
+        $manager->transactionClass = BalanceTransaction::class;
+
+        $firstId = $manager->createAccountPublic(['userId' => 901]);
+        $secondId = $manager->createAccountPublic(['userId' => 901]);
+
+        self::assertSame((string) $firstId, (string) $secondId);
     }
 
     public function testSkipAutoIncrementPrimaryKeyInActiveRecord(): void
