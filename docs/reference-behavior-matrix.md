@@ -97,7 +97,7 @@
 - Исполняемых тестов в `phpunit`: `124`.
 - Актуальные факты по последнему прогону:
   - `124 tests`;
-  - `226 assertions`;
+  - `236 assertions`;
   - `0 failures`.
 - Распределение:
   - `tests/ManagerTest.php`: `41`;
