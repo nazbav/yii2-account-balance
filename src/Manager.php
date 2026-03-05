@@ -13,6 +13,7 @@ namespace yii2tech\balance;
 use yii\base\Component;
 use yii\base\InvalidArgumentException;
 use yii\helpers\VarDumper;
+use yii\i18n\PhpMessageSource;
 
 /**
  * Manager is a base class for the balance managers.
@@ -73,6 +74,18 @@ abstract class Manager extends Component implements ManagerInterface
      * @var mixed value or callback used for date composition.
      */
     public mixed $dateAttributeValue = null;
+
+    /**
+     * Возвращает локализованное сообщение расширения.
+     *
+     * @param array<string, mixed> $params
+     */
+    public static function t(string $key, array $params = []): string
+    {
+        self::ensureI18nCategory();
+
+        return \Yii::t(self::I18N_CATEGORY, $key, $params);
+    }
 
     /**
      * @param mixed $account
@@ -147,7 +160,7 @@ abstract class Manager extends Component implements ManagerInterface
     {
         $transaction = $this->findTransaction($transactionId);
         if (empty($transaction)) {
-            throw new InvalidArgumentException(\Yii::t(self::I18N_CATEGORY, 'error.transaction_not_found', [
+            throw new InvalidArgumentException(self::t('error.transaction_not_found', [
                 'id' => (string) $transactionId,
             ]));
         }
@@ -178,7 +191,7 @@ abstract class Manager extends Component implements ManagerInterface
                     $accountId = $this->createAccount($idOrFilter);
                 } else {
                     throw new InvalidArgumentException(
-                        \Yii::t(self::I18N_CATEGORY, 'error.account_not_found_by_filter', [
+                        self::t('error.account_not_found_by_filter', [
                             'filter' => VarDumper::export($idOrFilter),
                         ])
                     );
@@ -238,7 +251,7 @@ abstract class Manager extends Component implements ManagerInterface
             return str_contains((string) $amount, '.') ? (float) $amount : (int) $amount;
         }
 
-        throw new InvalidArgumentException(\Yii::t(self::I18N_CATEGORY, 'error.amount_not_numeric'));
+        throw new InvalidArgumentException(self::t('error.amount_not_numeric'));
     }
 
     /**
@@ -270,5 +283,25 @@ abstract class Manager extends Component implements ManagerInterface
             'transactionData' => $data,
         ]);
         $this->trigger(self::EVENT_AFTER_CREATE_TRANSACTION, $event);
+    }
+
+    private static function ensureI18nCategory(): void
+    {
+        if (!isset(\Yii::$app->i18n)) {
+            return;
+        }
+
+        if (isset(\Yii::$app->i18n->translations[self::I18N_CATEGORY])) {
+            return;
+        }
+
+        \Yii::$app->i18n->translations[self::I18N_CATEGORY] = [
+            'class' => PhpMessageSource::class,
+            'basePath' => '@yii2tech/balance/messages',
+            'sourceLanguage' => 'xx-XX',
+            'fileMap' => [
+                self::I18N_CATEGORY => 'yii2tech.balance.php',
+            ],
+        ];
     }
 }

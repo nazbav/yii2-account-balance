@@ -101,7 +101,7 @@ trait ManagerDataSerializeTrait
         $rawValue = (string) $attributes[$this->dataAttribute];
         $dataAttributes = $this->getSerializer()->unserialize($rawValue);
         if (!is_array($dataAttributes)) {
-            throw new InvalidArgumentException(\Yii::t(Manager::I18N_CATEGORY, 'error.serialized_data_must_be_array'));
+            throw new InvalidArgumentException(Manager::t('error.serialized_data_must_be_array'));
         }
         unset($attributes[$this->dataAttribute]);
 

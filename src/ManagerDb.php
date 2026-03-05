@@ -118,7 +118,7 @@ class ManagerDb extends ManagerDbTransaction
     {
         $primaryKeys = $this->getDbConnection()->getSchema()->insert($this->accountTable, $attributes);
         if (!is_array($primaryKeys) || $primaryKeys === []) {
-            throw new InvalidConfigException(\Yii::t(Manager::I18N_CATEGORY, 'error.account_primary_key_not_received'));
+            throw new InvalidConfigException(Manager::t('error.account_primary_key_not_received'));
         }
 
         return count($primaryKeys) > 1 ? implode(',', $primaryKeys) : array_shift($primaryKeys);
@@ -140,7 +140,7 @@ class ManagerDb extends ManagerDbTransaction
         $serializedAttributes = $this->serializeAttributes($attributes, $allowedAttributes);
         $primaryKeys = $this->getDbConnection()->getSchema()->insert($this->transactionTable, $serializedAttributes);
         if (!is_array($primaryKeys) || $primaryKeys === []) {
-            throw new InvalidConfigException(\Yii::t(Manager::I18N_CATEGORY, 'error.transaction_primary_key_not_received'));
+            throw new InvalidConfigException(Manager::t('error.transaction_primary_key_not_received'));
         }
 
         return count($primaryKeys) > 1 ? implode(',', $primaryKeys) : array_shift($primaryKeys);
@@ -194,7 +194,7 @@ class ManagerDb extends ManagerDbTransaction
     {
         $schema = $this->getDbConnection()->getTableSchema($tableName);
         if ($schema === null) {
-            throw new InvalidConfigException(\Yii::t(Manager::I18N_CATEGORY, 'error.table_not_found', [
+            throw new InvalidConfigException(Manager::t('error.table_not_found', [
                 'table' => $tableName,
             ]));
         }
@@ -207,7 +207,7 @@ class ManagerDb extends ManagerDbTransaction
         $primaryKeys = $this->getRequiredTableSchema($tableName)->primaryKey;
         $primaryKey = array_shift($primaryKeys);
         if ($primaryKey === null) {
-            throw new InvalidConfigException(\Yii::t(Manager::I18N_CATEGORY, 'error.table_pk_required', [
+            throw new InvalidConfigException(Manager::t('error.table_pk_required', [
                 'table' => $tableName,
             ]));
         }
