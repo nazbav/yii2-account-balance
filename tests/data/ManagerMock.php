@@ -12,7 +12,7 @@ class ManagerMock extends \yii2tech\balance\Manager
      */
     public $accounts = [];
     /**
-     * @var array<string, int|float> account current balances.
+     * @var array<int|string, int|float> account current balances.
      */
     public $accountBalances = [];
     /**
