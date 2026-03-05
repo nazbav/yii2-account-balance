@@ -1,0 +1,58 @@
+{
+    "$schema": "vendor/infection/infection/resources/schema.json",
+    "minMsi": 100,
+    "minCoveredMsi": 100,
+    "source": {
+        "directories": [
+            "src"
+        ]
+    },
+    "mutators": {
+        "@default": true,
+        "CastString": {
+            "ignore": [
+                "nazbav\\balance\\Manager::revert::229",
+                "nazbav\\balance\\Manager::assertOperationIdRules::450",
+                "nazbav\\balance\\Manager::extractOperationId::478",
+                "nazbav\\balance\\ManagerActiveRecord::incrementAccountBalance::158",
+                "nazbav\\balance\\ManagerActiveRecord::incrementAccountBalance::159",
+                "nazbav\\balance\\ManagerDb::incrementAccountBalance::217",
+                "nazbav\\balance\\ManagerDb::incrementAccountBalance::218"
+            ]
+        },
+        "LogicalAndSingleSubExprNegation": {
+            "ignore": [
+                "nazbav\\balance\\Manager::normalizeAmount::365"
+            ]
+        },
+        "ArrayItemRemoval": {
+            "ignore": [
+                "nazbav\\balance\\Manager::ensureI18nCategory::507",
+                "nazbav\\balance\\ManagerActiveRecord::incrementAccountBalance::138",
+                "nazbav\\balance\\ManagerDb::hasOperationIdInAccountHistory::354"
+            ]
+        },
+        "MethodCallRemoval": {
+            "ignore": [
+                "nazbav\\balance\\ManagerDb::init::56"
+            ]
+        },
+        "LogicalOr": {
+            "ignore": [
+                "nazbav\\balance\\ManagerDb::createAccount::155",
+                "nazbav\\balance\\ManagerDb::createTransaction::180"
+            ]
+        },
+        "GreaterThan": {
+            "ignore": [
+                "nazbav\\balance\\ManagerDb::createAccount::159",
+                "nazbav\\balance\\ManagerDb::createTransaction::184"
+            ]
+        },
+        "InstanceOf_": {
+            "ignore": [
+                "nazbav\\balance\\ManagerDb::getDbConnection::269"
+            ]
+        }
+    }
+}

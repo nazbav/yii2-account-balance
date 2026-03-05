@@ -8,6 +8,7 @@ use nazbav\balance\BalanceRules;
 use nazbav\balance\Manager;
 use nazbav\balance\TransactionEvent;
 use nazbav\tests\unit\balance\data\ManagerMock;
+use Yii;
 
 class ManagerTest extends TestCase
 {
@@ -97,6 +98,47 @@ class ManagerTest extends TestCase
         $manager->transfer(10, 10, 5);
     }
 
+    public function testTransferRejectsZeroAmount(): void
+    {
+        $manager = new ManagerMock();
+
+        $this->expectException('yii\base\InvalidArgumentException');
+        $manager->transfer(10, 11, 0);
+    }
+
+    public function testTransferValidatesAmountBeforeCallingOverriddenIncreaseDecrease(): void
+    {
+        $manager = new class () extends ManagerMock {
+            public int $increaseCalls = 0;
+
+            public int $decreaseCalls = 0;
+
+            public function increase(mixed $account, int|float $amount, array $data = []): mixed
+            {
+                $this->increaseCalls++;
+
+                return 'increase';
+            }
+
+            public function decrease(mixed $account, int|float $amount, array $data = []): mixed
+            {
+                $this->decreaseCalls++;
+
+                return 'decrease';
+            }
+        };
+
+        try {
+            $manager->transfer(10, 11, 0);
+            self::fail('Ожидалось исключение для нулевой суммы перевода.');
+        } catch (\yii\base\InvalidArgumentException) {
+            // Ожидаемая ветка.
+        }
+
+        self::assertSame(0, $manager->increaseCalls);
+        self::assertSame(0, $manager->decreaseCalls);
+    }
+
     /**
      * @depends testIncrease
      */
@@ -134,6 +176,19 @@ class ManagerTest extends TestCase
         $manager->autoCreateAccount = false;
         $this->expectException('yii\base\InvalidArgumentException');
         $manager->increase(['userId' => 10], 10);
+    }
+
+    public function testAccountNotFoundErrorContainsFilter(): void
+    {
+        $manager = new ManagerMock();
+        $manager->autoCreateAccount = false;
+
+        try {
+            $manager->increase(['userId' => 10], 10);
+            self::fail('Ожидалось исключение при отсутствии счёта по фильтру.');
+        } catch (\yii\base\InvalidArgumentException $invalidArgumentException) {
+            self::assertStringContainsString('userId', $invalidArgumentException->getMessage());
+        }
     }
 
     /**
@@ -217,6 +272,19 @@ class ManagerTest extends TestCase
         $manager->decrease(1, 1);
     }
 
+    public function testZeroIncreaseAllowedWhenPositiveRuleDisabledWithNegativeProtection(): void
+    {
+        $manager = new ManagerMock();
+        $manager->requirePositiveAmount = false;
+        $manager->forbidNegativeBalance = true;
+        $manager->accountBalanceAttribute = null;
+
+        $manager->increase(1, 0);
+
+        $transaction = $manager->getLastTransaction();
+        self::assertSame(0, $transaction['amount']);
+    }
+
     public function testDuplicateOperationIdForSameAccountIsRejected(): void
     {
         $manager = new ManagerMock();
@@ -227,6 +295,23 @@ class ManagerTest extends TestCase
 
         $this->expectException('yii\base\InvalidArgumentException');
         $manager->increase(1001, 30, ['operationId' => 'bonus:welcome:1001']);
+    }
+
+    public function testDuplicateOperationIdErrorContainsOperationAndAccount(): void
+    {
+        $manager = new ManagerMock();
+        $manager->forbidDuplicateOperationId = true;
+        $manager->requireOperationId = true;
+
+        $manager->increase(1001, 30, ['operationId' => 'bonus:welcome:1001']);
+
+        try {
+            $manager->increase(1001, 30, ['operationId' => 'bonus:welcome:1001']);
+            self::fail('Ожидалось исключение для повторного operationId.');
+        } catch (\yii\base\InvalidArgumentException $invalidArgumentException) {
+            self::assertStringContainsString('bonus:welcome:1001', $invalidArgumentException->getMessage());
+            self::assertStringContainsString('1001', $invalidArgumentException->getMessage());
+        }
     }
 
     public function testDuplicateOperationIdAllowedForDifferentAccounts(): void
@@ -241,6 +326,18 @@ class ManagerTest extends TestCase
         self::assertCount(2, $manager->transactions);
     }
 
+    public function testDuplicateGuardWorksWithoutRequiredOperationId(): void
+    {
+        $manager = new ManagerMock();
+        $manager->forbidDuplicateOperationId = true;
+        $manager->requireOperationId = false;
+
+        $manager->increase(1001, 30, ['operationId' => 'campaign:single']);
+
+        $this->expectException('yii\base\InvalidArgumentException');
+        $manager->increase(1001, 30, ['operationId' => 'campaign:single']);
+    }
+
     public function testRequireOperationIdRejectsMissingValue(): void
     {
         $manager = new ManagerMock();
@@ -250,6 +347,20 @@ class ManagerTest extends TestCase
         $manager->increase(1001, 30, []);
     }
 
+    public function testRequireOperationIdErrorContainsAttributeName(): void
+    {
+        $manager = new ManagerMock();
+        $manager->requireOperationId = true;
+        $manager->operationIdAttribute = 'externalOperationId';
+
+        try {
+            $manager->increase(1001, 30, []);
+            self::fail('Ожидалось исключение при отсутствии operationId.');
+        } catch (\yii\base\InvalidArgumentException $invalidArgumentException) {
+            self::assertStringContainsString('externalOperationId', $invalidArgumentException->getMessage());
+        }
+    }
+
     public function testRequireOperationIdRejectsInvalidValueType(): void
     {
         $manager = new ManagerMock();
@@ -257,6 +368,67 @@ class ManagerTest extends TestCase
 
         $this->expectException('yii\base\InvalidArgumentException');
         $manager->increase(1001, 30, ['operationId' => ['nested' => true]]);
+    }
+
+    public function testInvalidOperationIdErrorContainsAttributeName(): void
+    {
+        $manager = new ManagerMock();
+        $manager->requireOperationId = true;
+        $manager->operationIdAttribute = 'externalOperationId';
+
+        try {
+            $manager->increase(1001, 30, ['externalOperationId' => ['nested' => true]]);
+            self::fail('Ожидалось исключение для некорректного типа operationId.');
+        } catch (\yii\base\InvalidArgumentException $invalidArgumentException) {
+            self::assertStringContainsString('externalOperationId', $invalidArgumentException->getMessage());
+        }
+    }
+
+    public function testOperationIdContainingOnlySpacesIsRejected(): void
+    {
+        $manager = new ManagerMock();
+        $manager->requireOperationId = true;
+
+        $this->expectException('yii\base\InvalidArgumentException');
+        $manager->increase(1001, 30, ['operationId' => '   ']);
+    }
+
+    public function testOperationIdContainingOnlySpacesErrorContainsCustomAttribute(): void
+    {
+        $manager = new ManagerMock();
+        $manager->requireOperationId = true;
+        $manager->operationIdAttribute = 'externalOperationId';
+
+        try {
+            $manager->increase(1001, 30, ['externalOperationId' => '   ']);
+            self::fail('Ожидалось исключение для пустого operationId после trim.');
+        } catch (\yii\base\InvalidArgumentException $invalidArgumentException) {
+            self::assertStringContainsString('externalOperationId', $invalidArgumentException->getMessage());
+        }
+    }
+
+    public function testNormalizeAmountAcceptsFractionalNumericStringAsFloat(): void
+    {
+        $manager = new ManagerMock();
+        $normalizedAmount = $this->invokeNonPublicMethod($manager, 'normalizeAmount', ['10.50']);
+
+        self::assertIsFloat($normalizedAmount);
+        self::assertSame(10.5, $normalizedAmount);
+    }
+
+    public function testAssertRequestedAmountAcceptsFiniteFloat(): void
+    {
+        $manager = new ManagerMock();
+        $this->invokeNonPublicMethod($manager, 'assertRequestedAmountIsPositive', [10.5]);
+        self::assertCount(0, $manager->transactions);
+    }
+
+    public function testAssertRequestedAmountRejectsInfiniteFloat(): void
+    {
+        $manager = new ManagerMock();
+
+        $this->expectException(\yii\base\InvalidArgumentException::class);
+        $this->invokeNonPublicMethod($manager, 'assertRequestedAmountIsPositive', [INF]);
     }
 
     public function testSetAndGetBalanceRules(): void
@@ -306,8 +478,10 @@ class ManagerTest extends TestCase
     public function testEventBeforeCreateTransaction(): void
     {
         $manager = new ManagerMock();
-        $manager->on(Manager::EVENT_BEFORE_CREATE_TRANSACTION, function ($event): void {
+        $eventAccountId = null;
+        $manager->on(Manager::EVENT_BEFORE_CREATE_TRANSACTION, function ($event) use (&$eventAccountId): void {
             /* @var $event TransactionEvent */
+            $eventAccountId = $event->accountId;
             $event->transactionData['extra'] = 'event';
         });
 
@@ -315,6 +489,7 @@ class ManagerTest extends TestCase
 
         $transaction = $manager->getLastTransaction();
         self::assertEquals('event', $transaction['extra']);
+        self::assertSame(1, $eventAccountId);
     }
 
     /**
@@ -334,5 +509,208 @@ class ManagerTest extends TestCase
         $transaction = $manager->getLastTransaction();
         self::assertNotNull($eventTransactionId);
         self::assertSame($eventTransactionId, $transaction['id']);
+    }
+
+    public function testRevertRoutesZeroAmountToDecreaseForRegularTransaction(): void
+    {
+        $manager = new class () extends ManagerMock {
+            public ?string $lastMethod = null;
+            /**
+             * @var array<string, mixed>|null
+             */
+            public ?array $forcedTransaction = null;
+
+            public function increase(mixed $account, int|float $amount, array $data = []): mixed
+            {
+                $this->lastMethod = 'increase';
+
+                return 'increase';
+            }
+
+            public function decrease(mixed $account, int|float $amount, array $data = []): mixed
+            {
+                $this->lastMethod = 'decrease';
+
+                return 'decrease';
+            }
+
+            public function transfer(mixed $from, mixed $to, int|float $amount, array $data = []): array
+            {
+                $this->lastMethod = 'transfer';
+
+                return ['transfer'];
+            }
+
+            protected function findTransaction(mixed $id): ?array
+            {
+                return $this->forcedTransaction;
+            }
+        };
+
+        $manager->forcedTransaction = [
+            $manager->accountLinkAttribute => 100,
+            $manager->amountAttribute => 0,
+        ];
+        $manager->requirePositiveAmount = false;
+
+        $manager->revert(1);
+
+        self::assertSame('decrease', $manager->lastMethod);
+    }
+
+    public function testRevertRoutesZeroAmountTransferInExpectedDirection(): void
+    {
+        $manager = new class () extends ManagerMock {
+            /**
+             * @var array<int, mixed>|null
+             */
+            public ?array $lastTransfer = null;
+            /**
+             * @var array<string, mixed>|null
+             */
+            public ?array $forcedTransaction = null;
+
+            public function transfer(mixed $from, mixed $to, int|float $amount, array $data = []): array
+            {
+                $this->lastTransfer = [$from, $to, $amount];
+
+                return ['transfer'];
+            }
+
+            protected function findTransaction(mixed $id): ?array
+            {
+                return $this->forcedTransaction;
+            }
+        };
+
+        $manager->extraAccountLinkAttribute = 'extraAccountId';
+        $manager->forcedTransaction = [
+            $manager->accountLinkAttribute => 100,
+            $manager->extraAccountLinkAttribute => 200,
+            $manager->amountAttribute => 0,
+        ];
+        $manager->requirePositiveAmount = false;
+
+        $manager->revert(1);
+
+        self::assertSame([100, 200, 0], $manager->lastTransfer);
+    }
+
+    public function testProtectedExtensionPointsAreActuallyOverridable(): void
+    {
+        $manager = new class () extends ManagerMock {
+            /**
+             * @var array<string, int>
+             */
+            public array $calls = [
+                'createSignedTransaction' => 0,
+                'getDateAttributeValue' => 0,
+                'assertRequestedAmountIsPositive' => 0,
+                'isSameAccount' => 0,
+                'beforeCreateTransaction' => 0,
+                'afterCreateTransaction' => 0,
+                'assertOperationIdRules' => 0,
+                'extractOperationId' => 0,
+            ];
+
+            protected function createSignedTransaction(mixed $account, int|float $signedAmount, array $data = []): mixed
+            {
+                $this->calls['createSignedTransaction']++;
+
+                return parent::createSignedTransaction($account, $signedAmount, $data);
+            }
+
+            protected function getDateAttributeValue(): mixed
+            {
+                $this->calls['getDateAttributeValue']++;
+
+                return parent::getDateAttributeValue();
+            }
+
+            protected function assertRequestedAmountIsPositive(int|float $amount): void
+            {
+                $this->calls['assertRequestedAmountIsPositive']++;
+                parent::assertRequestedAmountIsPositive($amount);
+            }
+
+            protected function isSameAccount(mixed $firstAccountId, mixed $secondAccountId): bool
+            {
+                $this->calls['isSameAccount']++;
+
+                return parent::isSameAccount($firstAccountId, $secondAccountId);
+            }
+
+            protected function beforeCreateTransaction(mixed $accountId, array $data): array
+            {
+                $this->calls['beforeCreateTransaction']++;
+
+                return parent::beforeCreateTransaction($accountId, $data);
+            }
+
+            protected function afterCreateTransaction(mixed $transactionId, mixed $accountId, array $data): void
+            {
+                $this->calls['afterCreateTransaction']++;
+                parent::afterCreateTransaction($transactionId, $accountId, $data);
+            }
+
+            protected function assertOperationIdRules(mixed $accountId, array $data): void
+            {
+                $this->calls['assertOperationIdRules']++;
+                parent::assertOperationIdRules($accountId, $data);
+            }
+
+            protected function extractOperationId(array $data): ?string
+            {
+                $this->calls['extractOperationId']++;
+
+                return parent::extractOperationId($data);
+            }
+        };
+
+        $manager->forbidTransferToSameAccount = true;
+        $manager->forbidDuplicateOperationId = true;
+        $manager->requireOperationId = true;
+
+        $manager->increase(1, 10, ['operationId' => 'ext:1']);
+        try {
+            $manager->transfer(1, 1, 10, ['operationId' => 'ext:2']);
+            self::fail('Ожидалось исключение перевода на тот же счёт.');
+        } catch (\yii\base\InvalidArgumentException) {
+            // Ожидаемая ветка.
+        }
+
+        self::assertGreaterThan(0, $manager->calls['createSignedTransaction']);
+        self::assertGreaterThan(0, $manager->calls['getDateAttributeValue']);
+        self::assertGreaterThan(0, $manager->calls['assertRequestedAmountIsPositive']);
+        self::assertGreaterThan(0, $manager->calls['isSameAccount']);
+        self::assertGreaterThan(0, $manager->calls['beforeCreateTransaction']);
+        self::assertGreaterThan(0, $manager->calls['afterCreateTransaction']);
+        self::assertGreaterThan(0, $manager->calls['assertOperationIdRules']);
+        self::assertGreaterThan(0, $manager->calls['extractOperationId']);
+    }
+
+    public function testTranslationMethodIsPublicAndLoadsMessages(): void
+    {
+        $originalLanguage = Yii::$app->language;
+        unset(Yii::$app->getI18n()->translations[Manager::I18N_CATEGORY]);
+        Yii::$app->language = 'en-US';
+        try {
+            $message = Manager::t('error.amount_not_numeric');
+        } finally {
+            Yii::$app->language = $originalLanguage;
+        }
+
+        self::assertSame('Сумма операции должна быть числом.', $message);
+    }
+
+    /**
+     * @param array<int, mixed> $arguments
+     */
+    private function invokeNonPublicMethod(object $object, string $method, array $arguments): mixed
+    {
+        $reflectionMethod = new \ReflectionMethod($object, $method);
+        $reflectionMethod->setAccessible(true);
+
+        return $reflectionMethod->invokeArgs($object, $arguments);
     }
 }

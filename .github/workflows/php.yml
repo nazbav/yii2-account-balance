@@ -140,6 +140,10 @@ jobs:
       - name: Run PHPStan
         run: vendor/bin/phpstan analyse -c phpstan.neon --no-progress
 
+      - name: Run mutation tests (Infection)
+        if: matrix.php == '8.3'
+        run: vendor/bin/infection --threads=max --only-covered --filter=src/Manager.php,src/ManagerDb.php,src/ManagerActiveRecord.php --no-progress
+
       - name: Run Psalm taint analysis
         run: vendor/bin/psalm --taint-analysis --no-cache --output-format=console
 
