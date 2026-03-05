@@ -67,4 +67,30 @@ class ManagerDataSerializeTraitTest extends TestCase
 
         $this->assertCount(4, $manager->transactions);
     }
+
+    public function testPhpSerializerBlocksObjectInstantiation(): void
+    {
+        $serializer = new \yii2tech\balance\PhpSerializer();
+        $payload = $serializer->serialize(['item' => new \stdClass()]);
+
+        $decoded = $serializer->unserialize($payload);
+
+        $this->assertIsArray($decoded);
+        $this->assertArrayHasKey('item', $decoded);
+        $this->assertNotInstanceOf(\stdClass::class, $decoded['item']);
+    }
+
+    public function testPhpSerializerAllowsConfiguredClasses(): void
+    {
+        $serializer = new \yii2tech\balance\PhpSerializer([
+            'allowedClasses' => [\stdClass::class],
+        ]);
+        $payload = $serializer->serialize(['item' => new \stdClass()]);
+
+        $decoded = $serializer->unserialize($payload);
+
+        $this->assertIsArray($decoded);
+        $this->assertArrayHasKey('item', $decoded);
+        $this->assertInstanceOf(\stdClass::class, $decoded['item']);
+    }
 }
