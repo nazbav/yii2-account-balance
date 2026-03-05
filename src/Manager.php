@@ -46,7 +46,7 @@ abstract class Manager extends Component implements ManagerInterface
      */
     public $accountLinkAttribute = 'accountId';
     /**
-     * @var string name of the transaction entity attribute, which should store additional affected account ID.
+     * @var string|null name of the transaction entity attribute, which should store additional affected account ID.
      * This attribute will be filled only at `transfer()` method execution and will store ID of the account transferred
      * from or to, depending on the context.
      * If not set, no information about the extra account context will be saved.
@@ -55,7 +55,7 @@ abstract class Manager extends Component implements ManagerInterface
      */
     public $extraAccountLinkAttribute;
     /**
-     * @var string name of the account entity attribute, which should store current balance value.
+     * @var string|null name of the account entity attribute, which should store current balance value.
      */
     public $accountBalanceAttribute;
     /**

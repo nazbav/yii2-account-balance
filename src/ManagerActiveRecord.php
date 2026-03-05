@@ -8,6 +8,7 @@
 namespace yii2tech\balance;
 
 use yii\base\Model;
+use yii\db\ActiveQuery;
 use yii\db\ActiveRecordInterface;
 use yii\db\BaseActiveRecord;
 
@@ -51,11 +52,11 @@ class ManagerActiveRecord extends ManagerDbTransaction
     use ManagerDataSerializeTrait;
 
     /**
-     * @var string name of the ActiveRecord class, which should store account records.
+     * @var class-string<BaseActiveRecord> name of the ActiveRecord class, which should store account records.
      */
     public $accountClass;
     /**
-     * @var string name of the ActiveRecord class, which should store transaction records.
+     * @var class-string<BaseActiveRecord> name of the ActiveRecord class, which should store transaction records.
      */
     public $transactionClass;
 
@@ -65,13 +66,12 @@ class ManagerActiveRecord extends ManagerDbTransaction
      */
     protected function findAccountId($attributes)
     {
-        /* @var $class ActiveRecordInterface */
+        /** @var class-string<BaseActiveRecord> $class */
         $class = $this->accountClass;
         $model = $class::find()->andWhere($attributes)->one();
-        if (!is_object($model)) {
+        if (!$model instanceof BaseActiveRecord) {
             return null;
         }
-        /* @var $model ActiveRecordInterface */
         return $model->getPrimaryKey(false);
     }
 
@@ -80,13 +80,12 @@ class ManagerActiveRecord extends ManagerDbTransaction
      */
     protected function findTransaction($id)
     {
-        /* @var $class ActiveRecordInterface */
+        /** @var class-string<BaseActiveRecord> $class */
         $class = $this->transactionClass;
         $model = $class::findOne($id);
-        if (!is_object($model)) {
+        if (!$model instanceof BaseActiveRecord) {
             return null;
         }
-        /* @var $model ActiveRecordInterface|Model */
         return $this->unserializeAttributes($model->getAttributes());
     }
 
@@ -95,9 +94,8 @@ class ManagerActiveRecord extends ManagerDbTransaction
      */
     protected function createAccount($attributes)
     {
-        /* @var $class ActiveRecordInterface */
+        /** @var class-string<BaseActiveRecord> $class */
         $class = $this->accountClass;
-        /* @var $model ActiveRecordInterface|Model */
         $model = new $class();
         $model->setAttributes($attributes, false);
         $model->save(false);
@@ -109,9 +107,8 @@ class ManagerActiveRecord extends ManagerDbTransaction
      */
     protected function createTransaction($attributes)
     {
-        /* @var $class ActiveRecordInterface */
+        /** @var class-string<BaseActiveRecord> $class */
         $class = $this->transactionClass;
-        /* @var $model ActiveRecordInterface|Model */
         $model = new $class();
         $model->setAttributes($this->serializeAttributes($attributes, $model->attributes()), false);
         $model->save(false);
@@ -123,7 +120,7 @@ class ManagerActiveRecord extends ManagerDbTransaction
      */
     protected function incrementAccountBalance($accountId, $amount)
     {
-        /* @var $class ActiveRecordInterface|BaseActiveRecord */
+        /** @var class-string<BaseActiveRecord> $class */
         $class = $this->accountClass;
 
         $primaryKeys = $class::primaryKey();
@@ -139,10 +136,12 @@ class ManagerActiveRecord extends ManagerDbTransaction
     {
         $accountId = $this->fetchAccountId($account);
 
-        /* @var $class ActiveRecordInterface|BaseActiveRecord */
+        /** @var class-string<BaseActiveRecord> $class */
         $class = $this->transactionClass;
+        /** @var ActiveQuery $query */
+        $query = $class::find();
 
-        return $class::find()
+        return $query
             ->andWhere([$this->accountLinkAttribute => $accountId])
             ->sum($this->amountAttribute);
     }
@@ -152,7 +151,7 @@ class ManagerActiveRecord extends ManagerDbTransaction
      */
     protected function createDbTransaction()
     {
-        /* @var $class ActiveRecordInterface|BaseActiveRecord */
+        /** @var class-string<BaseActiveRecord> $class */
         $class = $this->transactionClass;
         $db = $class::getDb();
 
