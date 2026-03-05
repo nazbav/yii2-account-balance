@@ -267,6 +267,45 @@ class ManagerDbTest extends TestCase
         $manager->increase(['userId' => 9201], 10, ['operationId; DROP TABLE BalanceTransaction;--' => 'bad']);
     }
 
+    public function testOperationIdSqlPayloadIsHandledAsLiteralValue(): void
+    {
+        $manager = new ManagerDb();
+        $manager->autoCreateAccount = true;
+        $manager->forbidDuplicateOperationId = true;
+        $manager->requireOperationId = true;
+
+        $manager->increase(['userId' => 9202], 10, ['operationId' => 'safe-operation']);
+        $manager->increase(['userId' => 9202], 10, ['operationId' => "payload' OR 1=1 --"]);
+
+        $rows = (new Query())
+            ->from('BalanceTransaction')
+            ->where(['accountId' => 1])
+            ->all();
+        self::assertCount(2, $rows);
+        self::assertSame("payload' OR 1=1 --", $rows[1]['operationId']);
+    }
+
+    public function testCalculateBalanceRejectsUnsafeAmountColumnName(): void
+    {
+        $manager = new ManagerDb();
+        $manager->amountAttribute = 'amount) OR 1=1 --';
+
+        $this->expectException('yii\base\InvalidConfigException');
+        $manager->calculateBalance(1);
+    }
+
+    public function testDuplicateOperationCheckRejectsUnsafeAccountLinkColumnName(): void
+    {
+        $manager = new ManagerDb();
+        $manager->autoCreateAccount = true;
+        $manager->forbidDuplicateOperationId = true;
+        $manager->requireOperationId = true;
+        $manager->accountLinkAttribute = 'accountId) OR 1=1 --';
+
+        $this->expectException('yii\base\InvalidConfigException');
+        $manager->increase(['userId' => 9203], 10, ['operationId' => 'safe-op']);
+    }
+
     public function testCreateAccountReturnsExistingIdOnDuplicateKeyRace(): void
     {
         $manager = new class () extends ManagerDb {

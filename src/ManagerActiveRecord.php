@@ -168,13 +168,17 @@ class ManagerActiveRecord extends ManagerDbTransaction
     {
         $accountId = $this->fetchAccountId($account);
         $class = $this->ensureActiveRecordClass($this->transactionClass, 'transactionClass');
+        $accountLinkColumn = $this->ensureSafeColumnName($this->accountLinkAttribute);
+        $amountColumn = $this->ensureSafeColumnName($this->amountAttribute);
+        $this->ensureTransactionColumnExists($class, $accountLinkColumn);
+        $this->ensureTransactionColumnExists($class, $amountColumn);
 
         /** @var ActiveQuery<ActiveRecord> $query */
         $query = $class::find();
 
         $balance = $query
-            ->andWhere([$this->accountLinkAttribute => $accountId])
-            ->sum($this->amountAttribute);
+            ->andWhere([$accountLinkColumn => $accountId])
+            ->sum($amountColumn);
         return $balance === null ? null : $this->normalizeAmount($balance);
     }
 
@@ -269,23 +273,33 @@ class ManagerActiveRecord extends ManagerDbTransaction
     {
         $class = $this->ensureActiveRecordClass($this->transactionClass, 'transactionClass');
         $operationIdColumn = $this->ensureSafeColumnName($this->operationIdAttribute);
-
-        $schema = $class::getDb()->getTableSchema($class::tableName());
-        if (!$schema instanceof TableSchema || !$schema->getColumn($operationIdColumn) instanceof \yii\db\ColumnSchema) {
-            throw new InvalidConfigException(self::t('error.operation_id_attribute_not_found', [
-                'attribute' => $operationIdColumn,
-                'table' => $class::tableName(),
-            ]));
-        }
+        $accountLinkColumn = $this->ensureSafeColumnName($this->accountLinkAttribute);
+        $this->ensureTransactionColumnExists($class, $operationIdColumn);
+        $this->ensureTransactionColumnExists($class, $accountLinkColumn);
 
         /** @var ActiveQuery<ActiveRecord> $query */
         $query = $class::find();
 
         return $query
             ->andWhere([
-                $this->accountLinkAttribute => $accountId,
+                $accountLinkColumn => $accountId,
                 $operationIdColumn => $operationId,
             ])
             ->exists();
+    }
+
+    /**
+     * @param class-string<ActiveRecord> $class
+     * @throws InvalidConfigException
+     */
+    private function ensureTransactionColumnExists(string $class, string $columnName): void
+    {
+        $schema = $class::getDb()->getTableSchema($class::tableName());
+        if (!$schema instanceof TableSchema || !$schema->getColumn($columnName) instanceof \yii\db\ColumnSchema) {
+            throw new InvalidConfigException(self::t('error.operation_id_attribute_not_found', [
+                'attribute' => $columnName,
+                'table' => $class::tableName(),
+            ]));
+        }
     }
 }

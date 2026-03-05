@@ -235,10 +235,15 @@ class ManagerDb extends ManagerDbTransaction
     public function calculateBalance(mixed $account): int|float|null
     {
         $accountId = $this->fetchAccountId($account);
+        $accountLinkColumn = $this->ensureSafeColumnName($this->accountLinkAttribute);
+        $amountColumn = $this->ensureSafeColumnName($this->amountAttribute);
+        $this->ensureTransactionColumnExists($accountLinkColumn);
+        $this->ensureTransactionColumnExists($amountColumn);
+
         $balance = (new Query())
             ->from($this->transactionTable)
-            ->andWhere([$this->accountLinkAttribute => $accountId])
-            ->sum($this->amountAttribute, $this->getDbConnection());
+            ->andWhere([$accountLinkColumn => $accountId])
+            ->sum($this->getDbConnection()->quoteColumnName($amountColumn), $this->getDbConnection());
 
         return $balance === null ? null : $this->normalizeAmount($balance);
     }
@@ -341,13 +346,15 @@ class ManagerDb extends ManagerDbTransaction
     protected function hasOperationIdInAccountHistory(mixed $accountId, string $operationId): bool
     {
         $operationIdColumn = $this->ensureSafeColumnName($this->operationIdAttribute);
+        $accountLinkColumn = $this->ensureSafeColumnName($this->accountLinkAttribute);
         $this->ensureTransactionColumnExists($operationIdColumn);
+        $this->ensureTransactionColumnExists($accountLinkColumn);
 
         $row = (new Query())
             ->select([$this->getTransactionIdAttribute()])
             ->from($this->transactionTable)
             ->andWhere([
-                $this->accountLinkAttribute => $accountId,
+                $accountLinkColumn => $accountId,
                 $operationIdColumn => $operationId,
             ])
             ->one($this->getDbConnection());
