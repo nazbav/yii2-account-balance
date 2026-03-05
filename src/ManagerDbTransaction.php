@@ -2,28 +2,23 @@
 
 declare(strict_types=1);
 
-/**
- * @link https://github.com/yii2tech
- * @copyright Copyright (c) 2015 Yii2tech
- * @license [New BSD License](http://www.opensource.org/licenses/bsd-license.php)
- */
-
 namespace yii2tech\balance;
 
+use Throwable;
+use yii\db\Exception;
 use yii\db\Transaction;
 
 /**
- * ManagerDbTransaction allows performing balance operations as a single Database transaction.
+ * ManagerDbTransaction выполняет операции баланса в рамках единой транзакции базы данных.
  *
  * @see Manager
  *
- * @author Paul Klimov <klimov.paul@gmail.com>
  * @since 1.0
  */
 abstract class ManagerDbTransaction extends Manager
 {
     /**
-     * @var array<int, Transaction|null> internal transaction instances stack.
+     * @var array<int, Transaction|null> стек внутренних экземпляров транзакций.
      */
     private array $dbTransactions = [];
 
@@ -31,6 +26,9 @@ abstract class ManagerDbTransaction extends Manager
      * @param mixed $account
      * @param int|float $amount
      * @param array<string, mixed> $data
+     * @return mixed
+     * @throws Exception
+     * @throws Throwable
      */
     public function increase(mixed $account, int|float $amount, array $data = []): mixed
     {
@@ -40,7 +38,7 @@ abstract class ManagerDbTransaction extends Manager
             $this->commitDbTransaction();
 
             return $result;
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $this->rollBackDbTransaction();
             throw $e;
         }
@@ -52,6 +50,8 @@ abstract class ManagerDbTransaction extends Manager
      * @param int|float $amount
      * @param array<string, mixed> $data
      * @return array<int, mixed>
+     * @throws Exception
+     * @throws Throwable
      */
     public function transfer(mixed $from, mixed $to, int|float $amount, array $data = []): array
     {
@@ -61,7 +61,7 @@ abstract class ManagerDbTransaction extends Manager
             $this->commitDbTransaction();
 
             return $result;
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $this->rollBackDbTransaction();
             throw $e;
         }
@@ -70,6 +70,9 @@ abstract class ManagerDbTransaction extends Manager
     /**
      * @param mixed $transactionId
      * @param array<string, mixed> $data
+     * @return mixed
+     * @throws Exception
+     * @throws Throwable
      */
     public function revert(mixed $transactionId, array $data = []): mixed
     {
@@ -79,7 +82,7 @@ abstract class ManagerDbTransaction extends Manager
             $this->commitDbTransaction();
 
             return $result;
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $this->rollBackDbTransaction();
             throw $e;
         }
@@ -90,25 +93,24 @@ abstract class ManagerDbTransaction extends Manager
         $this->dbTransactions[] = $this->createDbTransaction();
     }
 
+    /**
+     * @throws Exception
+     */
     protected function commitDbTransaction(): void
     {
         $transaction = array_pop($this->dbTransactions);
-        if ($transaction !== null) {
-            $transaction->commit();
-        }
+        $transaction?->commit();
     }
 
     protected function rollBackDbTransaction(): void
     {
         $transaction = array_pop($this->dbTransactions);
-        if ($transaction !== null) {
-            $transaction->rollBack();
-        }
+        $transaction?->rollBack();
     }
 
     /**
-     * Creates transaction instance, actually beginning transaction.
-     * If transactions are not supported, `null` will be returned.
+     * Создаёт экземпляр транзакции и фактически начинает её.
+     * Если транзакции не поддерживаются, возвращает `null`.
      */
     abstract protected function createDbTransaction(): ?Transaction;
 }

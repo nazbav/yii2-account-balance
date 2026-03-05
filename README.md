@@ -75,11 +75,11 @@ sequenceDiagram
     participant DB as Хранилище
 
     App->>M: transfer(from, to, amount, data)
-    M->>M: begin transaction
-    M->>DB: create debit transaction
-    M->>DB: create credit transaction
-    M->>DB: update account balances (optional)
-    M->>M: commit transaction
+    M->>M: начало транзакции
+    M->>DB: создание дебетовой транзакции
+    M->>DB: создание кредитовой транзакции
+    M->>DB: обновление балансов счетов (опционально)
+    M->>M: фиксация транзакции
     M-->>App: [debitTransactionId, creditTransactionId]
 ```
 
@@ -233,7 +233,7 @@ $this->createTable('{{%balance_transaction}}', [
 ## Безопасность
 
 - операции записи выполняются в транзакции (`ManagerDbTransaction`);
-- сериализатор PHP защищён от object-injection по умолчанию (`allowedClasses = false`);
+- сериализатор PHP защищён от внедрения объектов по умолчанию (`allowedClasses = false`);
 - входные суммы валидируются как числовые;
 - ошибки конфигурации и бизнес-ошибки отдаются через i18n-сообщения;
 - в CI доступны `phpstan`, `psalm --taint-analysis`, `composer audit`.

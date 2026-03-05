@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 
-// ensure we get report on all possible php errors
+// Включаем отчёт по всем возможным ошибкам PHP.
 error_reporting(-1);
 
 define('YII_ENABLE_ERROR_HANDLER', false);

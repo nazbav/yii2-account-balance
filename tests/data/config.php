@@ -3,9 +3,9 @@
 declare(strict_types=1);
 
 /**
- * This is the configuration file for the unit tests.
- * You can override configuration values by creating a `config.local.php` file
- * and manipulate the `$config` variable.
+ * Конфигурация для модульных тестов.
+ * Переопределения можно задать в файле `config.local.php`,
+ * изменяя переменную `$config`.
  */
 
 $config = [

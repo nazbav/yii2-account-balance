@@ -2,12 +2,6 @@
 
 declare(strict_types=1);
 
-/**
- * @link https://github.com/yii2tech
- * @copyright Copyright (c) 2015 Yii2tech
- * @license [New BSD License](http://www.opensource.org/licenses/bsd-license.php)
- */
-
 namespace yii2tech\balance;
 
 use yii\base\InvalidConfigException;
@@ -19,7 +13,7 @@ use yii\db\Transaction;
 use yii\di\Instance;
 
 /**
- * ManagerDb is a balance manager, which uses relational database as data storage.
+ * ManagerDb — менеджер баланса, использующий реляционную базу данных как хранилище.
  *
  * @see Manager
  *
@@ -32,17 +26,17 @@ class ManagerDb extends ManagerDbTransaction
     use ManagerDataSerializeTrait;
 
     /**
-     * @var Connection|array<string, mixed>|string DB connection object or application component ID.
+     * @var Connection|array<string, mixed>|string объект подключения к БД или ID компонента приложения.
      */
     public Connection|array|string $db = 'db';
 
     /**
-     * @var string name of the database table, which should store account records.
+     * @var string имя таблицы БД для хранения счётов.
      */
     public string $accountTable = '{{%BalanceAccount}}';
 
     /**
-     * @var string name of the database table, which should store transaction records.
+     * @var string имя таблицы БД для хранения транзакций.
      */
     public string $transactionTable = '{{%BalanceTransaction}}';
 

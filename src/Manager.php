@@ -2,12 +2,6 @@
 
 declare(strict_types=1);
 
-/**
- * @link https://github.com/yii2tech
- * @copyright Copyright (c) 2015 Yii2tech
- * @license [New BSD License](http://www.opensource.org/licenses/bsd-license.php)
- */
-
 namespace yii2tech\balance;
 
 use yii\base\Component;
@@ -16,11 +10,10 @@ use yii\helpers\VarDumper;
 use yii\i18n\PhpMessageSource;
 
 /**
- * Manager is a base class for the balance managers.
+ * Manager — базовый класс для менеджеров баланса.
  *
  * @see ManagerInterface
  *
- * @author Paul Klimov <klimov.paul@gmail.com>
  * @since 1.0
  */
 abstract class Manager extends Component implements ManagerInterface
@@ -31,47 +24,47 @@ abstract class Manager extends Component implements ManagerInterface
     public const I18N_CATEGORY = 'yii2tech.balance';
 
     /**
-     * @event TransactionEvent an event raised before creating new transaction.
+     * @event TransactionEvent событие перед созданием новой транзакции.
      */
     public const EVENT_BEFORE_CREATE_TRANSACTION = 'beforeCreateTransaction';
 
     /**
-     * @event TransactionEvent an event raised after new transaction has been created.
+     * @event TransactionEvent событие после создания новой транзакции.
      */
     public const EVENT_AFTER_CREATE_TRANSACTION = 'afterCreateTransaction';
 
     /**
-     * @var bool whether to automatically create requested account, if it does not yet exist.
+     * @var bool автоматически создавать запрошенный счёт, если он ещё не существует.
      */
     public bool $autoCreateAccount = true;
 
     /**
-     * @var string name of the transaction entity attribute, which should store amount.
+     * @var string имя атрибута сущности транзакции, в котором хранится сумма.
      */
     public string $amountAttribute = 'amount';
 
     /**
-     * @var string name of the transaction entity attribute linking transaction with account.
+     * @var string имя атрибута сущности транзакции для связи транзакции со счётом.
      */
     public string $accountLinkAttribute = 'accountId';
 
     /**
-     * @var string|null attribute storing second account ID in transfer operation context.
+     * @var string|null атрибут для хранения ID второго счёта в операции перевода.
      */
     public ?string $extraAccountLinkAttribute = null;
 
     /**
-     * @var string|null name of the account entity attribute with current balance value.
+     * @var string|null имя атрибута сущности счёта с текущим значением баланса.
      */
     public ?string $accountBalanceAttribute = null;
 
     /**
-     * @var string name of the transaction entity attribute storing date.
+     * @var string имя атрибута сущности транзакции для хранения даты.
      */
     public string $dateAttribute = 'date';
 
     /**
-     * @var mixed value or callback used for date composition.
+     * @var mixed значение или колбэк для формирования даты.
      */
     public mixed $dateAttributeValue = null;
 
@@ -180,7 +173,7 @@ abstract class Manager extends Component implements ManagerInterface
     }
 
     /**
-     * @param mixed $idOrFilter account ID or filter condition.
+     * @param mixed $idOrFilter ID счёта или условие фильтра.
      */
     protected function fetchAccountId(mixed $idOrFilter): mixed
     {

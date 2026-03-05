@@ -9,7 +9,7 @@ use yii\helpers\ArrayHelper;
 use Yii;
 
 /**
- * Base class for the test cases.
+ * Базовый класс для тестов.
  */
 class TestCase extends \PHPUnit\Framework\TestCase
 {
@@ -31,10 +31,10 @@ class TestCase extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * Returns a test configuration param from /data/config.php
-     * @param  string $name params name
-     * @param  mixed $default default value to use when param is not set.
-     * @return mixed  the value of the configuration param
+     * Возвращает параметр тестовой конфигурации из файла /data/config.php.
+     * @param  string $name имя параметра.
+     * @param  mixed $default значение по умолчанию, если параметр не задан.
+     * @return mixed значение параметра конфигурации.
      */
     public static function getParam($name, $default = null)
     {
@@ -46,10 +46,10 @@ class TestCase extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * Populates Yii::$app with a new application
-     * The application will be destroyed on tearDown() automatically.
-     * @param array $config The application configuration, if needed
-     * @param string $appClass name of the application class to create
+     * Заполняет Yii::$app новым экземпляром приложения.
+     * Приложение автоматически уничтожается в tearDown().
+     * @param array $config конфигурация приложения при необходимости.
+     * @param string $appClass имя класса создаваемого приложения.
      */
     protected function mockApplication($config = [], $appClass = '\yii\console\Application')
     {
@@ -72,7 +72,7 @@ class TestCase extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * @return string vendor path
+     * @return string путь к каталогу vendor.
      */
     protected function getVendorPath()
     {
@@ -80,7 +80,7 @@ class TestCase extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * Destroys application in Yii::$app by setting it to null.
+     * Удаляет приложение из Yii::$app, устанавливая значение `null`.
      */
     protected function destroyApplication()
     {

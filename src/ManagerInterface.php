@@ -2,63 +2,56 @@
 
 declare(strict_types=1);
 
-/**
- * @link https://github.com/yii2tech
- * @copyright Copyright (c) 2015 Yii2tech
- * @license [New BSD License](http://www.opensource.org/licenses/bsd-license.php)
- */
-
 namespace yii2tech\balance;
 
 /**
- * ManagerInterface defines balance manager interface.
+ * ManagerInterface определяет интерфейс менеджера баланса.
  *
- * @author Paul Klimov <klimov.paul@gmail.com>
  * @since 1.0
  */
 interface ManagerInterface
 {
     /**
-     * Increases account current balance ('debit' operation).
+     * Увеличивает текущий баланс счёта (операция дебета).
      *
-     * @param mixed $account account ID or filter condition.
-     * @param int|float $amount amount.
-     * @param array<string, mixed> $data extra data associated with the transaction.
+     * @param mixed $account ID счёта или фильтр.
+     * @param int|float $amount сумма.
+     * @param array<string, mixed> $data дополнительные данные транзакции.
      */
     public function increase(mixed $account, int|float $amount, array $data = []): mixed;
 
     /**
-     * Decreases account current balance ('credit' operation).
+     * Уменьшает текущий баланс счёта (операция кредита).
      *
-     * @param mixed $account account ID or filter condition.
-     * @param int|float $amount amount.
-     * @param array<string, mixed> $data extra data associated with the transaction.
+     * @param mixed $account ID счёта или фильтр.
+     * @param int|float $amount сумма.
+     * @param array<string, mixed> $data дополнительные данные транзакции.
      */
     public function decrease(mixed $account, int|float $amount, array $data = []): mixed;
 
     /**
-     * Transfers amount from one account to the other one.
+     * Переводит сумму с одного счёта на другой.
      *
-     * @param mixed $from account ID or filter condition.
-     * @param mixed $to account ID or filter condition.
-     * @param int|float $amount amount.
-     * @param array<string, mixed> $data extra data associated with the transaction.
-     * @return array<int, mixed> list of created transaction IDs.
+     * @param mixed $from ID счёта-источника или фильтр.
+     * @param mixed $to ID счёта-получателя или фильтр.
+     * @param int|float $amount сумма.
+     * @param array<string, mixed> $data дополнительные данные транзакции.
+     * @return array<int, mixed> список ID созданных транзакций.
      */
     public function transfer(mixed $from, mixed $to, int|float $amount, array $data = []): array;
 
     /**
-     * Reverts specified transaction.
+     * Откатывает указанную транзакцию.
      *
-     * @param mixed $transactionId ID of the transaction to be reverted.
-     * @param array<string, mixed> $data extra transaction data.
+     * @param mixed $transactionId ID транзакции для отката.
+     * @param array<string, mixed> $data дополнительные данные транзакции.
      */
     public function revert(mixed $transactionId, array $data = []): mixed;
 
     /**
-     * Calculates current account balance summarizing all related transactions.
+     * Вычисляет текущий баланс счёта по всем связанным транзакциям.
      *
-     * @param mixed $account account ID or filter condition.
+     * @param mixed $account ID счёта или фильтр.
      */
     public function calculateBalance(mixed $account): int|float|null;
 }

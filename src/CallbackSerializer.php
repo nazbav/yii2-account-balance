@@ -2,31 +2,24 @@
 
 declare(strict_types=1);
 
-/**
- * @link https://github.com/yii2tech
- * @copyright Copyright (c) 2015 Yii2tech
- * @license [New BSD License](http://www.opensource.org/licenses/bsd-license.php)
- */
-
 namespace yii2tech\balance;
 
 use yii\base\BaseObject;
 
 /**
- * CallbackSerializer serializes data via custom PHP callback.
+ * CallbackSerializer сериализует данные через пользовательские PHP-колбэки.
  *
- * @author Paul Klimov <klimov.paul@gmail.com>
  * @since 1.0
  */
 class CallbackSerializer extends BaseObject implements SerializerInterface
 {
     /**
-     * @var callable(mixed):string callback used for value serialization.
+     * @var callable(mixed):string колбэк для сериализации значения.
      */
     public $serialize;
 
     /**
-     * @var callable(string):mixed callback used for value restoration.
+     * @var callable(string):mixed колбэк для восстановления значения.
      */
     public $unserialize;
 

@@ -8,7 +8,7 @@ namespace yii2tech\tests\unit\balance\data;
 use yii2tech\balance\ManagerDataSerializeTrait;
 
 /**
- * ManagerDataSerialize is a mock manager class for the [[ManagerDataSerializeTrait]] testing.
+ * ManagerDataSerialize — тестовый класс менеджера для проверки [[ManagerDataSerializeTrait]].
  */
 class ManagerDataSerialize extends ManagerMock
 {

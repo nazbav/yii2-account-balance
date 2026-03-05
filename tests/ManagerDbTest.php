@@ -21,19 +21,19 @@ class ManagerDbTest extends TestCase
     }
 
     /**
-     * Setup tables for test ActiveRecord
+     * Создаёт таблицы для тестов.
      */
     protected function setupTestDbData()
     {
         $db = Yii::$app->getDb();
 
-        // Structure :
+        // Структура таблиц.
 
         $table = 'BalanceAccount';
         try {
             $db->createCommand()->dropTable($table)->execute();
         } catch (\Throwable $e) {
-            // table may not exist on fresh DB.
+            // Таблица может отсутствовать в новой базе.
         }
         $columns = [
             'id' => 'pk',
@@ -46,7 +46,7 @@ class ManagerDbTest extends TestCase
         try {
             $db->createCommand()->dropTable($table)->execute();
         } catch (\Throwable $e) {
-            // table may not exist on fresh DB.
+            // Таблица может отсутствовать в новой базе.
         }
         $columns = [
             'id' => 'pk',
@@ -59,7 +59,7 @@ class ManagerDbTest extends TestCase
     }
 
     /**
-     * @return array last saved transaction data.
+     * @return array данные последней сохранённой транзакции.
      */
     protected function getLastTransaction()
     {
@@ -72,7 +72,7 @@ class ManagerDbTest extends TestCase
         return $transaction;
     }
 
-    // Tests :
+    // Набор тестов.
 
     public function testIncrease()
     {
@@ -121,7 +121,7 @@ class ManagerDbTest extends TestCase
 
         $this->assertEquals($amount, $account['balance']);
 
-        // update :
+        // Обновление баланса существующего счёта.
         $amount = 50;
         $manager->increase(['userId' => 1], $amount);
         $account = (new Query())->from('BalanceAccount')->andWhere(['userId' => 1])->one();

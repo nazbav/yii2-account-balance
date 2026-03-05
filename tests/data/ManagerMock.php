@@ -6,26 +6,26 @@ declare(strict_types=1);
 namespace yii2tech\tests\unit\balance\data;
 
 /**
- * Manager mock class for the unit test
+ * Тестовый класс-имитатор менеджера.
  */
 class ManagerMock extends \yii2tech\balance\Manager
 {
     /**
-     * @var array<string, string> list of accounts
+     * @var array<string, string> список счётов.
      */
     public $accounts = [];
     /**
-     * @var array<int|string, int|float> account current balances.
+     * @var array<int|string, int|float> текущие балансы счётов.
      */
     public $accountBalances = [];
     /**
-     * @var array<int, array<string, mixed>> list of performed transactions
+     * @var array<int, array<string, mixed>> список выполненных транзакций.
      */
     public $transactions = [];
 
 
     /**
-     * @return array last transaction data.
+     * @return array данные последней транзакции.
      */
     public function getLastTransaction()
     {
@@ -37,7 +37,7 @@ class ManagerMock extends \yii2tech\balance\Manager
     }
 
     /**
-     * @return array[] last 2 transactions data.
+     * @return array[] данные двух последних транзакций.
      */
     public function getLastTransactionPair()
     {

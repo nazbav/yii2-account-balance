@@ -2,39 +2,32 @@
 
 declare(strict_types=1);
 
-/**
- * @link https://github.com/yii2tech
- * @copyright Copyright (c) 2015 Yii2tech
- * @license [New BSD License](http://www.opensource.org/licenses/bsd-license.php)
- */
-
 namespace yii2tech\balance;
 
 use yii\base\InvalidArgumentException;
 use yii\di\Instance;
 
 /**
- * ManagerDataSerializeTrait provides ability to serialize extra attributes into the single field.
- * It may be useful using data storage with static data schema, like relational database.
- * This trait supposed to be used inside descendant of [[Manager]].
+ * ManagerDataSerializeTrait предоставляет возможность сериализовать дополнительные атрибуты в одно поле.
+ * Подходит для хранилищ со статической схемой данных, например для реляционной базы данных.
+ * Трейт предназначен для использования в наследниках [[Manager]].
  *
  * @see Manager
  * @see SerializerInterface
  *
- * @property string|array|SerializerInterface $serializer serializer instance or its configuration.
+ * @property string|array|SerializerInterface $serializer экземпляр сериализатора или его конфигурация.
  *
- * @author Paul Klimov <klimov.paul@gmail.com>
  * @since 1.0
  */
 trait ManagerDataSerializeTrait
 {
     /**
-     * @var string|null name of the transaction entity attribute for serialized data.
+     * @var string|null имя атрибута сущности транзакции для сериализованных данных.
      */
     public ?string $dataAttribute = 'data';
 
     /**
-     * @var string|array<string, mixed>|SerializerInterface serializer instance or its configuration.
+     * @var string|array<string, mixed>|SerializerInterface экземпляр сериализатора или его конфигурация.
      */
     private string|array|SerializerInterface $_serializer = 'json';
 
