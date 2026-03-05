@@ -17,6 +17,9 @@ use yii\i18n\PhpMessageSource;
  * @see ManagerInterface
  *
  * @since 1.0
+ *
+ * @property-read float|int $normalizedMinimumAllowedBalance
+ * @property BalanceRules $balanceRules
  */
 abstract class Manager extends Component implements ManagerInterface
 {
@@ -136,6 +139,8 @@ abstract class Manager extends Component implements ManagerInterface
 
     /**
      * @param array<string, mixed> $data
+     * @throws InvalidArgumentException
+     * @throws InvalidConfigException
      */
     public function increase(mixed $account, int|float $amount, array $data = []): mixed
     {
@@ -149,6 +154,8 @@ abstract class Manager extends Component implements ManagerInterface
 
     /**
      * @param array<string, mixed> $data
+     * @throws InvalidArgumentException
+     * @throws InvalidConfigException
      */
     public function decrease(mixed $account, int|float $amount, array $data = []): mixed
     {
@@ -163,6 +170,8 @@ abstract class Manager extends Component implements ManagerInterface
     /**
      * @param array<string, mixed> $data
      * @return array<int, mixed>
+     * @throws InvalidArgumentException
+     * @throws InvalidConfigException
      */
     public function transfer(mixed $from, mixed $to, int|float $amount, array $data = []): array
     {
@@ -194,6 +203,8 @@ abstract class Manager extends Component implements ManagerInterface
 
     /**
      * @param array<string, mixed> $data
+     * @throws InvalidArgumentException
+     * @throws InvalidConfigException
      */
     public function revert(mixed $transactionId, array $data = []): mixed
     {
@@ -206,8 +217,8 @@ abstract class Manager extends Component implements ManagerInterface
 
         $amount = $this->normalizeAmount($transaction[$this->amountAttribute]);
 
+        $accountId = $transaction[$this->accountLinkAttribute];
         if ($this->extraAccountLinkAttribute !== null && isset($transaction[$this->extraAccountLinkAttribute])) {
-            $accountId = $transaction[$this->accountLinkAttribute];
             $extraAccountId = $transaction[$this->extraAccountLinkAttribute];
             $absoluteAmount = abs($amount);
 
@@ -218,7 +229,6 @@ abstract class Manager extends Component implements ManagerInterface
             return $this->transfer($accountId, $extraAccountId, $absoluteAmount, $data);
         }
 
-        $accountId = $transaction[$this->accountLinkAttribute];
         if ($amount < 0) {
             return $this->increase($accountId, abs($amount), $data);
         }

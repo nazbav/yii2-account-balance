@@ -1,6 +1,20 @@
 Журнал изменений nazbav/yii2-account-balance
 =============================================
 
+1.4.0, March 5, 2026
+--------------------
+
+- Усилен статический анализ:
+  - подключены `phpstan/phpstan-strict-rules` и `phpstan/phpstan-deprecation-rules`;
+  - удалены локальные `ignoreErrors` для пропуска missing-type ошибок;
+  - приведены тесты и вспомогательный код к новым строгим требованиям.
+- Расширен CI-контур:
+  - в `.github/workflows/php.yml` добавлены `dependency-review` и `actionlint`;
+  - добавлен отдельный security workflow `.github/workflows/security.yml` с `gitleaks` и `CodeQL` для GitHub Actions.
+- Повышена типобезопасность тестовой инфраструктуры:
+  - добавлены return types и точные generic-phpdoc в тестовых классах;
+  - устранены нестрогие конструкции (`empty`, short ternary и неоднозначные bool-проверки).
+
 1.3.0, March 5, 2026
 --------------------
 

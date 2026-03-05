@@ -171,6 +171,7 @@ composer qa
 - `composer lint:syntax` — синтаксическая проверка PHP-файлов;
 - `composer cs:check` / `composer cs:fix` — контроль и исправление стиля кода;
 - `composer rector:check` / `composer rector:fix` — автоматический рефакторинг и контроль архитектурных улучшений.
+- `composer analyse` — `phpstan` с `strict-rules` и `deprecation-rules`.
 
 Если глобальный `composer` не установлен:
 
@@ -180,11 +181,15 @@ php composer.phar qa
 
 ## CI
 
-Workflow: `.github/workflows/php.yml`
+Workflows:
 
-- матрица PHP: `8.1` и `8.3`;
-- БД в CI: MySQL `8.0`;
-- проверки: `parallel-lint`, `php-cs-fixer`, `rector`, `phpunit`, `phpstan` (уровень 8), `psalm --taint-analysis`, `composer audit`.
+- `.github/workflows/php.yml`
+  - матрица PHP: `8.1` и `8.3`;
+  - БД в CI: MySQL `8.0`;
+  - проверки: `parallel-lint`, `php-cs-fixer`, `rector`, `phpunit`, `phpstan` (уровень 8), `psalm --taint-analysis`, `composer audit`, `dependency-review`, `actionlint`.
+- `.github/workflows/security.yml`
+  - `gitleaks` (поиск секретов);
+  - `CodeQL` для GitHub Actions workflow-кода.
 
 ## Лицензия
 

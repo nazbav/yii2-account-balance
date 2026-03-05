@@ -10,10 +10,10 @@ declare(strict_types=1);
 
 $config = [
     'db' => [
-        'dsn' => getenv('YII_TEST_DB_DSN') ?: 'sqlite::memory:',
-        'username' => getenv('YII_TEST_DB_USERNAME') ?: null,
-        'password' => getenv('YII_TEST_DB_PASSWORD') ?: null,
-        'charset' => getenv('YII_TEST_DB_CHARSET') ?: 'utf8mb4',
+        'dsn' => getenv('YII_TEST_DB_DSN') !== false ? getenv('YII_TEST_DB_DSN') : 'sqlite::memory:',
+        'username' => getenv('YII_TEST_DB_USERNAME') !== false ? getenv('YII_TEST_DB_USERNAME') : null,
+        'password' => getenv('YII_TEST_DB_PASSWORD') !== false ? getenv('YII_TEST_DB_PASSWORD') : null,
+        'charset' => getenv('YII_TEST_DB_CHARSET') !== false ? getenv('YII_TEST_DB_CHARSET') : 'utf8mb4',
     ],
 ];
 

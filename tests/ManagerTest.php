@@ -18,11 +18,11 @@ class ManagerTest extends TestCase
         $manager->increase(1, 50);
 
         $transaction = $manager->getLastTransaction();
-        $this->assertEquals(50, $transaction['amount']);
+        self::assertEquals(50, $transaction['amount']);
 
         $manager->increase(1, 50, ['extra' => 'custom']);
         $transaction = $manager->getLastTransaction();
-        $this->assertEquals('custom', $transaction['extra']);
+        self::assertEquals('custom', $transaction['extra']);
     }
 
     /**
@@ -35,7 +35,7 @@ class ManagerTest extends TestCase
         $manager->decrease(1, 50);
 
         $transaction = $manager->getLastTransaction();
-        $this->assertEquals(-50, $transaction['amount']);
+        self::assertEquals(-50, $transaction['amount']);
     }
 
     public function testIncreaseRejectsNonPositiveAmount(): void
@@ -81,12 +81,12 @@ class ManagerTest extends TestCase
         $manager->transfer(1, 2, 10);
 
         $transactions = $manager->getLastTransactionPair();
-        $this->assertEquals(-10, $transactions[0]['amount']);
-        $this->assertEquals(10, $transactions[1]['amount']);
+        self::assertEquals(-10, $transactions[0]['amount']);
+        self::assertEquals(10, $transactions[1]['amount']);
 
         $manager->transfer(1, 2, 10, ['extra' => 'custom']);
         $transaction = $manager->getLastTransaction();
-        $this->assertEquals('custom', $transaction['extra']);
+        self::assertEquals('custom', $transaction['extra']);
     }
 
     public function testTransferRejectsSameAccount(): void
@@ -107,17 +107,17 @@ class ManagerTest extends TestCase
         $now = time();
         $manager->increase(1, 10);
         $transaction = $manager->getLastTransaction();
-        $this->assertTrue($transaction['date'] >= $now);
+        self::assertTrue($transaction['date'] >= $now);
 
         $manager->dateAttributeValue = fn (): string => 'callback';
         $manager->increase(1, 10);
         $transaction = $manager->getLastTransaction();
-        $this->assertEquals('callback', $transaction['date']);
+        self::assertEquals('callback', $transaction['date']);
 
         $manager->dateAttributeValue = new \DateTime();
         $manager->increase(1, 10);
         $transaction = $manager->getLastTransaction();
-        $this->assertEquals($manager->dateAttributeValue, $transaction['date']);
+        self::assertEquals($manager->dateAttributeValue, $transaction['date']);
     }
 
     /**
@@ -129,7 +129,7 @@ class ManagerTest extends TestCase
 
         $manager->autoCreateAccount = true;
         $manager->increase(['userId' => 5], 10);
-        $this->assertCount(1, $manager->accounts);
+        self::assertCount(1, $manager->accounts);
 
         $manager->autoCreateAccount = false;
         $this->expectException('yii\base\InvalidArgumentException');
@@ -147,13 +147,13 @@ class ManagerTest extends TestCase
         $accountId = 10;
         $amount = 50;
         $manager->increase($accountId, $amount);
-        $this->assertEquals($amount, $manager->accountBalances[$accountId]);
+        self::assertEquals($amount, $manager->accountBalances[$accountId]);
 
         $manager->accountBalanceAttribute = null;
         $accountId = 20;
         $amount = 40;
         $manager->increase($accountId, $amount);
-        $this->assertArrayNotHasKey($accountId, $manager->accountBalances);
+        self::assertArrayNotHasKey($accountId, $manager->accountBalances);
     }
 
     /**
@@ -166,8 +166,8 @@ class ManagerTest extends TestCase
         $manager->extraAccountLinkAttribute = 'extraAccountId';
         $manager->transfer(1, 2, 10);
         $transactions = $manager->getLastTransactionPair();
-        $this->assertEquals(2, $transactions[0][$manager->extraAccountLinkAttribute]);
-        $this->assertEquals(1, $transactions[1][$manager->extraAccountLinkAttribute]);
+        self::assertEquals(2, $transactions[0][$manager->extraAccountLinkAttribute]);
+        self::assertEquals(1, $transactions[1][$manager->extraAccountLinkAttribute]);
     }
 
     /**
@@ -184,15 +184,15 @@ class ManagerTest extends TestCase
         $transactionId = $manager->increase($accountId, 10);
         $manager->revert($transactionId);
 
-        $this->assertEquals(0, $manager->accountBalances[$accountId]);
+        self::assertEquals(0, $manager->accountBalances[$accountId]);
 
         $fromId = 10;
         $toId = 20;
         $transactionIds = $manager->transfer($fromId, $toId, 10);
         $manager->revert($transactionIds[0]);
 
-        $this->assertEquals(0, $manager->accountBalances[$fromId]);
-        $this->assertEquals(0, $manager->accountBalances[$toId]);
+        self::assertEquals(0, $manager->accountBalances[$fromId]);
+        self::assertEquals(0, $manager->accountBalances[$toId]);
     }
 
     public function testRevertDecreaseTransaction(): void
@@ -205,7 +205,7 @@ class ManagerTest extends TestCase
         $decreaseTransactionId = $manager->decrease($accountId, 10);
         $manager->revert($decreaseTransactionId);
 
-        $this->assertEquals(50, $manager->accountBalances[$accountId]);
+        self::assertEquals(50, $manager->accountBalances[$accountId]);
     }
 
     public function testForbidNegativeBalanceRequiresBalanceAttribute(): void
@@ -227,16 +227,16 @@ class ManagerTest extends TestCase
             minimumAllowedBalance: -100,
         ));
 
-        $this->assertFalse($manager->requirePositiveAmount);
-        $this->assertFalse($manager->forbidTransferToSameAccount);
-        $this->assertTrue($manager->forbidNegativeBalance);
-        $this->assertSame(-100, $manager->minimumAllowedBalance);
+        self::assertFalse($manager->requirePositiveAmount);
+        self::assertFalse($manager->forbidTransferToSameAccount);
+        self::assertTrue($manager->forbidNegativeBalance);
+        self::assertSame(-100, $manager->minimumAllowedBalance);
 
         $rules = $manager->getBalanceRules();
-        $this->assertFalse($rules->requirePositiveAmount);
-        $this->assertFalse($rules->forbidTransferToSameAccount);
-        $this->assertTrue($rules->forbidNegativeBalance);
-        $this->assertSame(-100, $rules->minimumAllowedBalance);
+        self::assertFalse($rules->requirePositiveAmount);
+        self::assertFalse($rules->forbidTransferToSameAccount);
+        self::assertTrue($rules->forbidNegativeBalance);
+        self::assertSame(-100, $rules->minimumAllowedBalance);
     }
 
     public function testEnableStrictMode(): void
@@ -244,10 +244,10 @@ class ManagerTest extends TestCase
         $manager = new ManagerMock();
         $manager->enableStrictMode();
 
-        $this->assertTrue($manager->requirePositiveAmount);
-        $this->assertTrue($manager->forbidTransferToSameAccount);
-        $this->assertTrue($manager->forbidNegativeBalance);
-        $this->assertSame(0, $manager->minimumAllowedBalance);
+        self::assertTrue($manager->requirePositiveAmount);
+        self::assertTrue($manager->forbidTransferToSameAccount);
+        self::assertTrue($manager->forbidNegativeBalance);
+        self::assertSame(0, $manager->minimumAllowedBalance);
     }
 
     public function testSetBalanceRulesRejectsInfiniteMinimum(): void
@@ -272,7 +272,7 @@ class ManagerTest extends TestCase
         $manager->increase(1, 50);
 
         $transaction = $manager->getLastTransaction();
-        $this->assertEquals('event', $transaction['extra']);
+        self::assertEquals('event', $transaction['extra']);
     }
 
     /**
@@ -290,7 +290,7 @@ class ManagerTest extends TestCase
         $manager->increase(1, 50);
 
         $transaction = $manager->getLastTransaction();
-        $this->assertNotNull($eventTransactionId);
-        $this->assertSame($eventTransactionId, $transaction['id']);
+        self::assertNotNull($eventTransactionId);
+        self::assertSame($eventTransactionId, $transaction['id']);
     }
 }

@@ -24,9 +24,9 @@ class ManagerMock extends \nazbav\balance\Manager
 
 
     /**
-     * @return array данные последней транзакции.
+     * @return array<string, mixed> данные последней транзакции.
      */
-    public function getLastTransaction()
+    public function getLastTransaction(): array
     {
         $transaction = end($this->transactions);
         if ($transaction === false) {
@@ -36,9 +36,9 @@ class ManagerMock extends \nazbav\balance\Manager
     }
 
     /**
-     * @return array[] данные двух последних транзакций.
+     * @return array<int, array<string, mixed>> данные двух последних транзакций.
      */
-    public function getLastTransactionPair()
+    public function getLastTransactionPair(): array
     {
         $last = end($this->transactions);
         $preLast = prev($this->transactions);

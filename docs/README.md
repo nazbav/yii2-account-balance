@@ -27,11 +27,12 @@
 ## Проверки качества
 
 - Локальный запуск полного набора проверок: `composer qa`.
-- Состав набора: `parallel-lint`, `php-cs-fixer`, `rector`, `phpunit`, `phpstan` (уровень 8), `psalm --taint-analysis`, `composer audit`.
+- Состав набора: `parallel-lint`, `php-cs-fixer`, `rector`, `phpunit`, `phpstan` (уровень 8 + strict/deprecation rules), `psalm --taint-analysis`, `composer audit`.
 - Для автоисправлений доступны команды: `composer cs:fix` и `composer rector:fix`.
 
 ## CI и релизы
 
 - Workflow CI: `.github/workflows/php.yml`.
+- Security workflow: `.github/workflows/security.yml`.
 - Матрица CI: PHP `8.1` и `8.3`, MySQL `8.0`.
 - История изменений: `CHANGELOG.md`.

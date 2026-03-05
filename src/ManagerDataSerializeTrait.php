@@ -92,7 +92,11 @@ trait ManagerDataSerializeTrait
             return $attributes;
         }
 
-        if (empty($attributes[$this->dataAttribute])) {
+        if (
+            !array_key_exists($this->dataAttribute, $attributes)
+            || $attributes[$this->dataAttribute] === null
+            || $attributes[$this->dataAttribute] === ''
+        ) {
             unset($attributes[$this->dataAttribute]);
 
             return $attributes;

@@ -137,7 +137,12 @@ $manager->on(Manager::EVENT_BEFORE_CREATE_TRANSACTION, static function ($event) 
 - `composer lint:syntax` — синтаксический линт `parallel-lint`.
 - `composer cs:check` / `composer cs:fix` — проверка и исправление стиля через `php-cs-fixer`.
 - `composer rector:check` / `composer rector:fix` — проверка и применение рефакторинга через `rector`.
-- `composer analyse` — статический анализ `phpstan` (уровень 8).
+- `composer analyse` — статический анализ `phpstan` (уровень 8 + strict/deprecation rules).
 - `composer security:taint` — taint-анализ `psalm`.
 - `composer security:audit` — аудит зависимостей.
 - `composer qa` — полный набор проверок для CI и локального запуска.
+
+Дополнительные CI-контуры:
+
+- `.github/workflows/php.yml` — unit/static/security checks для кода.
+- `.github/workflows/security.yml` — `gitleaks` и `CodeQL` (workflow security).

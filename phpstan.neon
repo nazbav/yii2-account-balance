@@ -1,5 +1,7 @@
 includes:
     - vendor/phpstan/phpstan-phpunit/extension.neon
+    - vendor/phpstan/phpstan-strict-rules/rules.neon
+    - vendor/phpstan/phpstan-deprecation-rules/rules.neon
 
 parameters:
     level: 8
@@ -11,8 +13,3 @@ parameters:
     excludePaths:
         analyse:
             - tests/data/travis
-    ignoreErrors:
-        -
-            identifier: missingType.iterableValue
-        -
-            identifier: missingType.return

@@ -8,6 +8,9 @@ use nazbav\tests\unit\balance\data\ManagerDataSerialize;
 
 class ManagerDataSerializeTraitTest extends TestCase
 {
+    /**
+     * @return array<int, array{0: string|array<string, mixed>}>
+     */
     public function dataProviderSerializeMethod(): array
     {
         return [
@@ -29,6 +32,8 @@ class ManagerDataSerializeTraitTest extends TestCase
 
     /**
      * @dataProvider dataProviderSerializeMethod
+     *
+     * @param string|array<string, mixed> $serializer
      */
     public function testSerialize(string|array $serializer): void
     {
@@ -37,13 +42,15 @@ class ManagerDataSerializeTraitTest extends TestCase
 
         $manager->increase(1, 50, ['extra' => 'custom']);
         $transaction = $manager->getLastTransaction();
-        $this->assertEquals(50, $transaction['amount']);
-        $this->assertStringContainsString('custom', $transaction['data']);
+        self::assertEquals(50, $transaction['amount']);
+        self::assertStringContainsString('custom', $transaction['data']);
     }
 
     /**
      * @depends testSerialize
      * @dataProvider dataProviderSerializeMethod
+     *
+     * @param string|array<string, mixed> $serializer
      */
     public function testUnserialize(string|array $serializer): void
     {
@@ -56,7 +63,7 @@ class ManagerDataSerializeTraitTest extends TestCase
         $transactionIds = $manager->transfer($fromId, $toId, 10);
         $manager->revert($transactionIds[0]);
 
-        $this->assertCount(4, $manager->transactions);
+        self::assertCount(4, $manager->transactions);
     }
 
     public function testPhpSerializerBlocksObjectInstantiation(): void
@@ -66,9 +73,9 @@ class ManagerDataSerializeTraitTest extends TestCase
 
         $decoded = $serializer->unserialize($payload);
 
-        $this->assertIsArray($decoded);
-        $this->assertArrayHasKey('item', $decoded);
-        $this->assertNotInstanceOf(\stdClass::class, $decoded['item']);
+        self::assertIsArray($decoded);
+        self::assertArrayHasKey('item', $decoded);
+        self::assertNotInstanceOf(\stdClass::class, $decoded['item']);
     }
 
     public function testPhpSerializerAllowsConfiguredClasses(): void
@@ -80,8 +87,8 @@ class ManagerDataSerializeTraitTest extends TestCase
 
         $decoded = $serializer->unserialize($payload);
 
-        $this->assertIsArray($decoded);
-        $this->assertArrayHasKey('item', $decoded);
-        $this->assertInstanceOf(\stdClass::class, $decoded['item']);
+        self::assertIsArray($decoded);
+        self::assertArrayHasKey('item', $decoded);
+        self::assertInstanceOf(\stdClass::class, $decoded['item']);
     }
 }

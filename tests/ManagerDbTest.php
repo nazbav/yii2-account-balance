@@ -22,7 +22,7 @@ class ManagerDbTest extends TestCase
     /**
      * Создаёт таблицы для тестов.
      */
-    protected function setupTestDbData()
+    protected function setupTestDbData(): void
     {
         $db = Yii::$app->getDb();
 
@@ -60,16 +60,16 @@ class ManagerDbTest extends TestCase
     }
 
     /**
-     * @return array данные последней сохранённой транзакции.
+     * @return array<string, mixed> данные последней сохранённой транзакции.
      */
-    protected function getLastTransaction()
+    protected function getLastTransaction(): array
     {
         $transaction = (new Query())
             ->from('BalanceTransaction')
             ->orderBy(['id' => SORT_DESC])
             ->limit(1)
             ->one();
-        $this->assertIsArray($transaction);
+        self::assertIsArray($transaction);
         return $transaction;
     }
 
@@ -82,11 +82,11 @@ class ManagerDbTest extends TestCase
         $manager->increase(1, 50);
 
         $transaction = $this->getLastTransaction();
-        $this->assertEquals(50, $transaction['amount']);
+        self::assertEquals(50, $transaction['amount']);
 
         $manager->increase(1, 50, ['extra' => 'custom']);
         $transaction = $this->getLastTransaction();
-        $this->assertStringContainsString('custom', $transaction['data']);
+        self::assertStringContainsString('custom', $transaction['data']);
     }
 
     /**
@@ -99,8 +99,8 @@ class ManagerDbTest extends TestCase
         $manager->autoCreateAccount = true;
         $manager->increase(['userId' => 5], 10);
         $accounts = (new Query())->from('BalanceAccount')->all();
-        $this->assertCount(1, $accounts);
-        $this->assertEquals(5, $accounts[0]['userId']);
+        self::assertCount(1, $accounts);
+        self::assertEquals(5, $accounts[0]['userId']);
 
         $manager->autoCreateAccount = false;
         $this->expectException('yii\base\InvalidArgumentException');
@@ -119,16 +119,16 @@ class ManagerDbTest extends TestCase
         $amount = 50;
         $manager->increase(['userId' => 1], $amount);
         $account = (new Query())->from('BalanceAccount')->andWhere(['userId' => 1])->one();
-        $this->assertIsArray($account);
+        self::assertIsArray($account);
 
-        $this->assertEquals($amount, $account['balance']);
+        self::assertEquals($amount, $account['balance']);
 
         // Обновление баланса существующего счёта.
         $amount = 50;
         $manager->increase(['userId' => 1], $amount);
         $account = (new Query())->from('BalanceAccount')->andWhere(['userId' => 1])->one();
-        $this->assertIsArray($account);
-        $this->assertEquals(100, $account['balance']);
+        self::assertIsArray($account);
+        self::assertEquals(100, $account['balance']);
     }
 
     /**
@@ -144,8 +144,8 @@ class ManagerDbTest extends TestCase
         $manager->revert($transactionId);
 
         $transaction = $this->getLastTransaction();
-        $this->assertEquals($accountId, $transaction['accountId']);
-        $this->assertEquals(-$amount, $transaction['amount']);
+        self::assertEquals($accountId, $transaction['accountId']);
+        self::assertEquals(-$amount, $transaction['amount']);
     }
 
     public function testTransferRejectsSameAccount(): void
@@ -168,14 +168,14 @@ class ManagerDbTest extends TestCase
 
         try {
             $manager->decrease(['userId' => 100], 50);
-            $this->fail('Ожидалось исключение о недостатке средств.');
+            self::fail('Ожидалось исключение о недостатке средств.');
         } catch (\yii\base\InvalidArgumentException $invalidArgumentException) {
-            $this->assertStringContainsString('Недостаточно средств', $invalidArgumentException->getMessage());
+            self::assertStringContainsString('Недостаточно средств', $invalidArgumentException->getMessage());
         }
 
         $account = (new Query())->from('BalanceAccount')->andWhere(['userId' => 100])->one();
-        $this->assertIsArray($account);
-        $this->assertEquals(30, $account['balance']);
+        self::assertIsArray($account);
+        self::assertEquals(30, $account['balance']);
     }
 
     /**
@@ -189,7 +189,7 @@ class ManagerDbTest extends TestCase
         $manager->increase(2, 50);
         $manager->decrease(1, 25);
 
-        $this->assertEquals(25, $manager->calculateBalance(1));
+        self::assertEquals(25, $manager->calculateBalance(1));
     }
 
     /**
@@ -210,6 +210,6 @@ class ManagerDbTest extends TestCase
             ],
         );
         $transaction = $this->getLastTransaction();
-        $this->assertStringContainsString('123456789', $transaction['data']);
+        self::assertStringContainsString('123456789', $transaction['data']);
     }
 }

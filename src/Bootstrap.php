@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace nazbav\balance;
 
-use yii\base\Application;
 use yii\base\BootstrapInterface;
 use yii\i18n\PhpMessageSource;
 
@@ -15,7 +14,7 @@ class Bootstrap implements BootstrapInterface
 {
     public function bootstrap($app): void
     {
-        if (!($app instanceof Application) || !isset($app->i18n)) {
+        if (!isset($app->i18n)) {
             return;
         }
 

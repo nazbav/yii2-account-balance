@@ -6,7 +6,6 @@ namespace nazbav\balance;
 
 use yii\base\InvalidArgumentException;
 use yii\base\InvalidConfigException;
-use yii\base\NotSupportedException;
 use yii\db\ActiveQuery;
 use yii\db\ActiveRecord;
 use yii\db\BaseActiveRecord;
@@ -94,8 +93,7 @@ class ManagerActiveRecord extends ManagerDbTransaction
     }
 
     /**
-     * @throws NotSupportedException
-     * @throws InvalidConfigException
+     * @throws InvalidConfigException|Exception
      */
     protected function incrementAccountBalance(mixed $accountId, int|float $amount): void
     {
@@ -196,25 +194,16 @@ class ManagerActiveRecord extends ManagerDbTransaction
     /**
      * @param array<string, mixed> $attributes
      * @return array<string, mixed>
-     * @throws InvalidConfigException
      */
     private function filterWritableAttributes(ActiveRecord $model, array $attributes): array
     {
         $allowedAttributes = $this->detectWritableAttributeNames($model);
-        $filteredAttributes = [];
 
-        foreach ($attributes as $name => $value) {
-            if (in_array($name, $allowedAttributes, true)) {
-                $filteredAttributes[$name] = $value;
-            }
-        }
-
-        return $filteredAttributes;
+        return array_filter($attributes, fn ($name): bool => in_array($name, $allowedAttributes, true), ARRAY_FILTER_USE_KEY);
     }
 
     /**
      * @return array<int, string>
-     * @throws InvalidConfigException
      */
     private function detectWritableAttributeNames(ActiveRecord $model): array
     {
@@ -225,7 +214,7 @@ class ManagerActiveRecord extends ManagerDbTransaction
         }
 
         foreach ($schema->columns as $column) {
-            if ($column->isPrimaryKey && $column->autoIncrement) {
+            if ($column->isPrimaryKey === true && $column->autoIncrement === true) {
                 $allowedAttributes = array_values(array_filter(
                     $allowedAttributes,
                     static fn (string $attributeName): bool => $attributeName !== $column->name,
@@ -241,7 +230,7 @@ class ManagerActiveRecord extends ManagerDbTransaction
      */
     private function ensureSafeColumnName(string $columnName): string
     {
-        if (!preg_match('/^[A-Za-z_][A-Za-z0-9_]*$/', $columnName)) {
+        if (preg_match('/^[A-Za-z_][A-Za-z0-9_]*$/', $columnName) !== 1) {
             throw new InvalidConfigException(self::t('error.invalid_column_name', [
                 'column' => $columnName,
             ]));

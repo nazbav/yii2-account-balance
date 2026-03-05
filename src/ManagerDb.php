@@ -146,7 +146,7 @@ class ManagerDb extends ManagerDbTransaction
     {
         $allowedAttributes = [];
         foreach ($this->getRequiredTableSchema($this->transactionTable)->columns as $column) {
-            if ($column->isPrimaryKey && $column->autoIncrement) {
+            if ($column->isPrimaryKey === true && $column->autoIncrement === true) {
                 continue;
             }
 
@@ -284,7 +284,7 @@ class ManagerDb extends ManagerDbTransaction
      */
     private function ensureSafeColumnName(string $columnName): string
     {
-        if (!preg_match('/^[A-Za-z_][A-Za-z0-9_]*$/', $columnName)) {
+        if (preg_match('/^[A-Za-z_][A-Za-z0-9_]*$/', $columnName) !== 1) {
             throw new InvalidConfigException(self::t('error.invalid_column_name', [
                 'column' => $columnName,
             ]));

@@ -47,10 +47,11 @@ class TestCase extends \PHPUnit\Framework\TestCase
     /**
      * Заполняет Yii::$app новым экземпляром приложения.
      * Приложение автоматически уничтожается в tearDown().
-     * @param array $config конфигурация приложения при необходимости.
-     * @param string $appClass имя класса создаваемого приложения.
+     *
+     * @param array<string, mixed> $config конфигурация приложения при необходимости.
+     * @param class-string $appClass имя класса создаваемого приложения.
      */
-    protected function mockApplication($config = [], $appClass = '\yii\console\Application')
+    protected function mockApplication(array $config = [], string $appClass = '\yii\console\Application'): void
     {
         $dbConfig = static::getParam('db', [
             'class' => 'yii\db\Connection',
@@ -81,7 +82,7 @@ class TestCase extends \PHPUnit\Framework\TestCase
     /**
      * Удаляет приложение из Yii::$app, устанавливая значение `null`.
      */
-    protected function destroyApplication()
+    protected function destroyApplication(): void
     {
         /** @phpstan-ignore-next-line Сбрасываем Yii::$app между тестами. */
         Yii::$app = null;
