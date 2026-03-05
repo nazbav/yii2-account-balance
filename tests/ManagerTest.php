@@ -453,6 +453,33 @@ class ManagerTest extends TestCase
         self::assertSame(-100, $rules->minimumAllowedBalance);
     }
 
+    public function testBalanceRulesDefaultConstructorValues(): void
+    {
+        $rules = new BalanceRules();
+
+        self::assertTrue($rules->requirePositiveAmount);
+        self::assertTrue($rules->forbidTransferToSameAccount);
+        self::assertFalse($rules->forbidNegativeBalance);
+        self::assertSame(0, $rules->minimumAllowedBalance);
+    }
+
+    public function testBalanceRulesStrictDefaultMinimum(): void
+    {
+        $rules = BalanceRules::strict();
+
+        self::assertTrue($rules->requirePositiveAmount);
+        self::assertTrue($rules->forbidTransferToSameAccount);
+        self::assertTrue($rules->forbidNegativeBalance);
+        self::assertSame(0, $rules->minimumAllowedBalance);
+    }
+
+    public function testBalanceRulesStrictUsesProvidedMinimum(): void
+    {
+        $rules = BalanceRules::strict(-5);
+
+        self::assertSame(-5, $rules->minimumAllowedBalance);
+    }
+
     public function testEnableStrictMode(): void
     {
         $manager = new ManagerMock();

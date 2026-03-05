@@ -91,4 +91,111 @@ class ManagerDataSerializeTraitTest extends TestCase
         self::assertArrayHasKey('item', $decoded);
         self::assertInstanceOf(\stdClass::class, $decoded['item']);
     }
+
+    public function testSerializerAccessorMethodsArePublicAndWork(): void
+    {
+        $manager = new ManagerDataSerialize();
+
+        $manager->setSerializer('json');
+
+        $serializer = $manager->getSerializer();
+
+        self::assertInstanceOf(\nazbav\balance\JsonSerializer::class, $serializer);
+    }
+
+    public function testSerializerCanBeConfiguredByClassStringName(): void
+    {
+        $manager = new ManagerDataSerialize();
+        $manager->setSerializer(\nazbav\balance\JsonSerializer::class);
+
+        $manager->increase(1, 10, ['extra' => 'by-class-string']);
+
+        $transaction = $manager->getLastTransaction();
+
+        self::assertStringContainsString('by-class-string', $transaction['data']);
+    }
+
+    public function testUnserializeCastsRawDataToStringBeforeSerializerCall(): void
+    {
+        $manager = new class () extends ManagerDataSerialize {
+            /**
+             * @param array<string, mixed> $attributes
+             * @return array<string, mixed>
+             */
+            public function unserializePublic(array $attributes): array
+            {
+                return $this->unserializeAttributes($attributes);
+            }
+        };
+
+        $manager->setSerializer([
+            'serialize' => static fn ($value): string => (string) $value,
+            'unserialize' => static fn (string $value): array => ['decoded' => $value],
+        ]);
+
+        $decoded = $manager->unserializePublic(['data' => 123]);
+
+        self::assertSame('123', $decoded['decoded']);
+    }
+
+    public function testTraitProtectedExtensionPointsAreOverridable(): void
+    {
+        $manager = new class () extends ManagerDataSerialize {
+            public int $serializeCalls = 0;
+
+            public int $unserializeCalls = 0;
+
+            public int $createSerializerCalls = 0;
+
+            /**
+             * @return array<string, mixed>|null
+             */
+            public function findTransactionPublic(mixed $id): ?array
+            {
+                return $this->findTransaction($id);
+            }
+
+            /**
+             * @param array<string, mixed> $attributes
+             * @param array<int, string> $allowedAttributes
+             * @return array<string, mixed>
+             */
+            protected function serializeAttributes(array $attributes, array $allowedAttributes): array
+            {
+                $this->serializeCalls++;
+
+                return parent::serializeAttributes($attributes, $allowedAttributes);
+            }
+
+            /**
+             * @param array<string, mixed> $attributes
+             * @return array<string, mixed>
+             */
+            protected function unserializeAttributes(array $attributes): array
+            {
+                $this->unserializeCalls++;
+
+                return parent::unserializeAttributes($attributes);
+            }
+
+            /**
+             * @param string|array<string, mixed> $config
+             */
+            protected function createSerializer(string|array $config): \nazbav\balance\SerializerInterface
+            {
+                $this->createSerializerCalls++;
+
+                return parent::createSerializer($config);
+            }
+        };
+
+        $manager->setSerializer('json');
+
+        $transactionId = $manager->increase(1, 10, ['extra' => 'ext-point']);
+        $manager->findTransactionPublic($transactionId);
+
+        self::assertGreaterThan(0, $manager->serializeCalls);
+        self::assertGreaterThan(0, $manager->unserializeCalls);
+        self::assertGreaterThan(0, $manager->createSerializerCalls);
+    }
 }

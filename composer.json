@@ -41,7 +41,7 @@
         "rector:check": "rector process --dry-run --ansi",
         "rector:fix": "rector process --ansi",
         "test": "phpunit -c phpunit.xml.dist",
-        "test:mutation": "infection --threads=max --only-covered --filter=src/Manager.php,src/ManagerDb.php,src/ManagerActiveRecord.php --no-progress",
+        "test:mutation": "infection --threads=max --only-covered --no-progress",
         "analyse": "phpstan analyse -c phpstan.neon --no-progress",
         "security:audit": "composer audit --locked",
         "security:taint": "psalm --taint-analysis --no-cache --output-format=console",
