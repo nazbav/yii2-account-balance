@@ -10,6 +10,9 @@ use Yii;
  */
 class TestCase extends \PHPUnit\Framework\TestCase
 {
+    /**
+     * @var array<string, mixed>|null
+     */
     public static $params;
 
     protected function setUp(): void
@@ -78,6 +81,7 @@ class TestCase extends \PHPUnit\Framework\TestCase
      */
     protected function destroyApplication()
     {
+        /** @phpstan-ignore-next-line Сбрасываем Yii::$app между тестами. */
         Yii::$app = null;
     }
 }

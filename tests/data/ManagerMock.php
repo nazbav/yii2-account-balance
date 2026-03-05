@@ -8,15 +8,15 @@ namespace yii2tech\tests\unit\balance\data;
 class ManagerMock extends \yii2tech\balance\Manager
 {
     /**
-     * @var array[] list of accounts
+     * @var array<string, string> list of accounts
      */
     public $accounts = [];
     /**
-     * @var array account current balances.
+     * @var array<string, int|float> account current balances.
      */
     public $accountBalances = [];
     /**
-     * @var array[] list of performed transactions
+     * @var array<int, array<string, mixed>> list of performed transactions
      */
     public $transactions = [];
 
@@ -26,7 +26,11 @@ class ManagerMock extends \yii2tech\balance\Manager
      */
     public function getLastTransaction()
     {
-        return end($this->transactions);
+        $transaction = end($this->transactions);
+        if ($transaction === false) {
+            return [];
+        }
+        return $transaction;
     }
 
     /**
@@ -36,6 +40,12 @@ class ManagerMock extends \yii2tech\balance\Manager
     {
         $last = end($this->transactions);
         $preLast = prev($this->transactions);
+        if ($preLast === false) {
+            $preLast = [];
+        }
+        if ($last === false) {
+            $last = [];
+        }
         return [$preLast, $last];
     }
 

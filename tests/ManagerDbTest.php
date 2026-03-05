@@ -60,11 +60,13 @@ class ManagerDbTest extends TestCase
      */
     protected function getLastTransaction()
     {
-        return (new Query())
+        $transaction = (new Query())
             ->from('BalanceTransaction')
             ->orderBy(['id' => SORT_DESC])
             ->limit(1)
             ->one();
+        $this->assertIsArray($transaction);
+        return $transaction;
     }
 
     // Tests :
