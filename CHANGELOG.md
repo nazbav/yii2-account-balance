@@ -1,5 +1,14 @@
-Yii 2 Balance Accounting System extension Change Log
-====================================================
+Журнал изменений nazbav/yii2-account-balance
+=============================================
+
+1.1.0, March 5, 2026
+--------------------
+
+- Я полностью перенёс пакет на `nazbav/yii2-account-balance`.
+- Я сменил namespace с `yii2tech\balance` на `nazbav\balance`.
+- Я обновил `composer.json`, bootstrap, i18n-категорию и имена файлов переводов.
+- Я заменил все пути, ссылки и алиасы в коде, тестах и документации на `nazbav`.
+- Я проверил совместимость: `phpunit`, `phpstan` и `psalm --taint-analysis` проходят без ошибок.
 
 1.0.3, September 19, 2018
 -------------------------
