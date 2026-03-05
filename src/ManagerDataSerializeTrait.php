@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace yii2tech\balance;
 
 use yii\base\InvalidArgumentException;
+use yii\base\InvalidConfigException;
 use yii\di\Instance;
 
 /**
@@ -31,6 +32,9 @@ trait ManagerDataSerializeTrait
      */
     private string|array|SerializerInterface $_serializer = 'json';
 
+    /**
+     * @throws InvalidConfigException
+     */
     public function getSerializer(): SerializerInterface
     {
         if (!$this->_serializer instanceof SerializerInterface) {
@@ -52,6 +56,8 @@ trait ManagerDataSerializeTrait
      * @param array<string, mixed> $attributes
      * @param array<int, string> $allowedAttributes
      * @return array<string, mixed>
+     * @throws InvalidConfigException
+     * @throws InvalidConfigException
      */
     protected function serializeAttributes(array $attributes, array $allowedAttributes): array
     {
@@ -78,6 +84,8 @@ trait ManagerDataSerializeTrait
     /**
      * @param array<string, mixed> $attributes
      * @return array<string, mixed>
+     * @throws InvalidConfigException
+     * @throws InvalidConfigException
      */
     protected function unserializeAttributes(array $attributes): array
     {
@@ -103,6 +111,8 @@ trait ManagerDataSerializeTrait
 
     /**
      * @param string|array<string, mixed> $config
+     * @return SerializerInterface
+     * @throws InvalidConfigException
      */
     protected function createSerializer(string|array $config): SerializerInterface
     {
