@@ -76,7 +76,7 @@ abstract class Manager extends Component implements ManagerInterface
     public bool $requirePositiveAmount = true;
 
     /**
-     * @var bool запрещать перевод между одинаковыми счетами.
+     * @var bool запрещать перевод между одинаковыми счётами.
      */
     public bool $forbidTransferToSameAccount = true;
 
