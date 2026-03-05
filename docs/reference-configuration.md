@@ -27,6 +27,9 @@ interface ManagerInterface
 | `requirePositiveAmount` | `bool` | `true` | Требовать сумму `> 0` в публичных операциях. |
 | `forbidTransferToSameAccount` | `bool` | `true` | Запрещать перевод между одинаковыми счетами. |
 | `forbidNegativeBalance` | `bool` | `false` | Блокировать уход ниже минимума. |
+| `forbidDuplicateOperationId` | `bool` | `false` | Блокировать повторный `operationId` для того же счета. |
+| `requireOperationId` | `bool` | `false` | Требовать `operationId` в данных транзакции. |
+| `operationIdAttribute` | `string` | `operationId` | Ключ `operationId` в данных транзакции. |
 | `minimumAllowedBalance` | `int|float` | `0` | Нижняя граница баланса. |
 
 ## Настройка правил через `BalanceRules`
@@ -133,6 +136,10 @@ $manager->on(Manager::EVENT_BEFORE_CREATE_TRANSACTION, static function (Transact
 | `error.transaction_not_found` | `InvalidArgumentException` | Не найдена транзакция для `revert()`. |
 | `error.insufficient_funds` | `InvalidArgumentException` | Недостаточно средств в режиме защиты. |
 | `error.invalid_column_name` | `InvalidConfigException` | Небезопасное имя колонки. |
+| `error.operation_id_required` | `InvalidArgumentException` | Не передан обязательный `operationId`. |
+| `error.operation_id_invalid` | `InvalidArgumentException` | Передан пустой или нестроковый `operationId`. |
+| `error.duplicate_operation_id` | `InvalidArgumentException` | Повторный `operationId` для того же счета. |
+| `error.operation_id_attribute_not_found` | `InvalidConfigException` | В таблице транзакций нет колонки для `operationId`. |
 | `error.account_attributes_empty_after_filter` | `InvalidArgumentException` | Для автосоздания счета передан фильтр без допустимых атрибутов схемы. |
 | `error.table_not_found` | `InvalidConfigException` | Не найдена таблица. |
 | `error.table_pk_required` | `InvalidConfigException` | У таблицы нет PK. |
@@ -156,6 +163,9 @@ $manager->on(Manager::EVENT_BEFORE_CREATE_TRANSACTION, static function (Transact
 'requirePositiveAmount' => true,
 'forbidTransferToSameAccount' => true,
 'forbidNegativeBalance' => true,
+'forbidDuplicateOperationId' => true,
+'requireOperationId' => true,
+'operationIdAttribute' => 'operationId',
 'minimumAllowedBalance' => 0,
 'accountBalanceAttribute' => 'balance',
 ```

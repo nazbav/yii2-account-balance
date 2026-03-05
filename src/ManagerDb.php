@@ -333,4 +333,38 @@ class ManagerDb extends ManagerDbTransaction
             ARRAY_FILTER_USE_KEY,
         );
     }
+
+    /**
+     * {@inheritDoc}
+     * @throws InvalidConfigException
+     */
+    protected function hasOperationIdInAccountHistory(mixed $accountId, string $operationId): bool
+    {
+        $operationIdColumn = $this->ensureSafeColumnName($this->operationIdAttribute);
+        $this->ensureTransactionColumnExists($operationIdColumn);
+
+        $row = (new Query())
+            ->select([$this->getTransactionIdAttribute()])
+            ->from($this->transactionTable)
+            ->andWhere([
+                $this->accountLinkAttribute => $accountId,
+                $operationIdColumn => $operationId,
+            ])
+            ->one($this->getDbConnection());
+
+        return is_array($row);
+    }
+
+    /**
+     * @throws InvalidConfigException
+     */
+    private function ensureTransactionColumnExists(string $columnName): void
+    {
+        if (!$this->getRequiredTableSchema($this->transactionTable)->getColumn($columnName) instanceof \yii\db\ColumnSchema) {
+            throw new InvalidConfigException(self::t('error.operation_id_attribute_not_found', [
+                'attribute' => $columnName,
+                'table' => $this->transactionTable,
+            ]));
+        }
+    }
 }

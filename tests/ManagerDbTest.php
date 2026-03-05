@@ -54,6 +54,7 @@ class ManagerDbTest extends TestCase
             'id' => 'pk',
             'date' => 'integer',
             'accountId' => 'integer',
+            'operationId' => 'string',
             'amount' => 'integer',
             'data' => 'text',
         ];
@@ -207,6 +208,63 @@ class ManagerDbTest extends TestCase
 
         $this->expectException('yii\base\InvalidArgumentException');
         $manager->increase(['unknownAttr' => 1], 10);
+    }
+
+    public function testDuplicateOperationIdForSameAccountIsRejected(): void
+    {
+        $manager = new ManagerDb();
+        $manager->autoCreateAccount = true;
+        $manager->accountBalanceAttribute = 'balance';
+        $manager->forbidDuplicateOperationId = true;
+        $manager->requireOperationId = true;
+
+        $manager->increase(['userId' => 9001], 40, ['operationId' => 'bonus:welcome:9001']);
+
+        try {
+            $manager->increase(['userId' => 9001], 40, ['operationId' => 'bonus:welcome:9001']);
+            self::fail('Ожидалось исключение для повторного operationId.');
+        } catch (\yii\base\InvalidArgumentException $invalidArgumentException) {
+            self::assertStringContainsString('уже выполнена', $invalidArgumentException->getMessage());
+        }
+
+        $account = (new Query())->from('BalanceAccount')->andWhere(['userId' => 9001])->one();
+        self::assertIsArray($account);
+        self::assertEquals(40, $account['balance']);
+    }
+
+    public function testDuplicateOperationIdAllowedForDifferentAccounts(): void
+    {
+        $manager = new ManagerDb();
+        $manager->autoCreateAccount = true;
+        $manager->forbidDuplicateOperationId = true;
+        $manager->requireOperationId = true;
+
+        $manager->increase(['userId' => 9101], 10, ['operationId' => 'campaign:shared']);
+        $manager->increase(['userId' => 9102], 10, ['operationId' => 'campaign:shared']);
+
+        $rows = (new Query())->from('BalanceTransaction')->where(['operationId' => 'campaign:shared'])->all();
+        self::assertCount(2, $rows);
+    }
+
+    public function testRequireOperationIdRejectsMissingValue(): void
+    {
+        $manager = new ManagerDb();
+        $manager->requireOperationId = true;
+
+        $this->expectException('yii\base\InvalidArgumentException');
+        $manager->increase(1, 10);
+    }
+
+    public function testOperationIdAttributeRejectsUnsafeColumnName(): void
+    {
+        $manager = new ManagerDb();
+        $manager->autoCreateAccount = true;
+        $manager->forbidDuplicateOperationId = true;
+        $manager->requireOperationId = true;
+        $manager->operationIdAttribute = 'operationId; DROP TABLE BalanceTransaction;--';
+
+        $this->expectException('yii\base\InvalidConfigException');
+        $manager->increase(['userId' => 9201], 10, ['operationId; DROP TABLE BalanceTransaction;--' => 'bad']);
     }
 
     public function testCreateAccountReturnsExistingIdOnDuplicateKeyRace(): void

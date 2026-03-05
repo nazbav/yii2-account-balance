@@ -89,6 +89,21 @@ abstract class Manager extends Component implements ManagerInterface
     public bool $forbidNegativeBalance = false;
 
     /**
+     * @var bool включать защиту от повторной обработки одного operationId для одного счёта.
+     */
+    public bool $forbidDuplicateOperationId = false;
+
+    /**
+     * @var bool требовать наличие operationId в данных транзакции.
+     */
+    public bool $requireOperationId = false;
+
+    /**
+     * @var string имя атрибута transaction data, в котором передаётся operationId.
+     */
+    public string $operationIdAttribute = 'operationId';
+
+    /**
      * @var int|float минимально допустимый баланс, если включён запрет отрицательного баланса.
      */
     public int|float $minimumAllowedBalance = 0;
@@ -291,6 +306,8 @@ abstract class Manager extends Component implements ManagerInterface
     {
         $accountId = $this->fetchAccountId($account);
 
+        $this->assertOperationIdRules($accountId, $data);
+
         if (!isset($data[$this->dateAttribute])) {
             $data[$this->dateAttribute] = $this->getDateAttributeValue();
         }
@@ -405,6 +422,75 @@ abstract class Manager extends Component implements ManagerInterface
             'transactionData' => $data,
         ]);
         $this->trigger(self::EVENT_AFTER_CREATE_TRANSACTION, $event);
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     * @throws InvalidArgumentException
+     * @throws InvalidConfigException
+     */
+    protected function assertOperationIdRules(mixed $accountId, array $data): void
+    {
+        if (!$this->forbidDuplicateOperationId && !$this->requireOperationId) {
+            return;
+        }
+
+        $operationId = $this->extractOperationId($data);
+        if ($operationId === null) {
+            return;
+        }
+
+        if (!$this->forbidDuplicateOperationId) {
+            return;
+        }
+
+        if ($this->hasOperationIdInAccountHistory($accountId, $operationId)) {
+            throw new InvalidArgumentException(self::t('error.duplicate_operation_id', [
+                'operationId' => $operationId,
+                'accountId' => (string) $accountId,
+            ]));
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     * @throws InvalidArgumentException
+     */
+    protected function extractOperationId(array $data): ?string
+    {
+        if (!array_key_exists($this->operationIdAttribute, $data)) {
+            if ($this->requireOperationId) {
+                throw new InvalidArgumentException(self::t('error.operation_id_required', [
+                    'attribute' => $this->operationIdAttribute,
+                ]));
+            }
+
+            return null;
+        }
+
+        $operationId = $data[$this->operationIdAttribute];
+        if (!is_scalar($operationId) || is_bool($operationId)) {
+            throw new InvalidArgumentException(self::t('error.operation_id_invalid', [
+                'attribute' => $this->operationIdAttribute,
+            ]));
+        }
+
+        $normalizedOperationId = trim((string) $operationId);
+        if ($normalizedOperationId === '') {
+            throw new InvalidArgumentException(self::t('error.operation_id_invalid', [
+                'attribute' => $this->operationIdAttribute,
+            ]));
+        }
+
+        return $normalizedOperationId;
+    }
+
+    /**
+     * Проверяет, есть ли в истории счёта операция с данным operationId.
+     */
+    protected function hasOperationIdInAccountHistory(mixed $accountId, string $operationId): bool
+    {
+        return false;
     }
 
     private static function ensureI18nCategory(): void

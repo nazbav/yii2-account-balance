@@ -18,4 +18,8 @@ return [
     'error.table_pk_required' => 'Таблица "{table}" должна иметь первичный ключ.',
     'error.account_class_pk_required' => 'Класс счёта должен иметь первичный ключ.',
     'error.property_must_be_active_record_class' => 'Свойство "{property}" должно содержать класс ActiveRecord.',
+    'error.operation_id_required' => 'Для операции обязательно поле "{attribute}".',
+    'error.operation_id_invalid' => 'Поле "{attribute}" должно содержать непустой строковый идентификатор операции.',
+    'error.duplicate_operation_id' => 'Операция с идентификатором "{operationId}" уже выполнена для счёта "{accountId}".',
+    'error.operation_id_attribute_not_found' => 'Колонка "{attribute}" не найдена в таблице "{table}".',
 ];

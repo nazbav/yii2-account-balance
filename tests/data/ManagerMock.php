@@ -117,4 +117,23 @@ class ManagerMock extends \nazbav\balance\Manager
         }
         return null;
     }
+
+    protected function hasOperationIdInAccountHistory(mixed $accountId, string $operationId): bool
+    {
+        foreach ($this->transactions as $transaction) {
+            if (!isset($transaction[$this->accountLinkAttribute], $transaction[$this->operationIdAttribute])) {
+                continue;
+            }
+
+            if ((string) $transaction[$this->accountLinkAttribute] !== (string) $accountId) {
+                continue;
+            }
+
+            if ((string) $transaction[$this->operationIdAttribute] === $operationId) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 }

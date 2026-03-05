@@ -217,6 +217,48 @@ class ManagerTest extends TestCase
         $manager->decrease(1, 1);
     }
 
+    public function testDuplicateOperationIdForSameAccountIsRejected(): void
+    {
+        $manager = new ManagerMock();
+        $manager->forbidDuplicateOperationId = true;
+        $manager->requireOperationId = true;
+
+        $manager->increase(1001, 30, ['operationId' => 'bonus:welcome:1001']);
+
+        $this->expectException('yii\base\InvalidArgumentException');
+        $manager->increase(1001, 30, ['operationId' => 'bonus:welcome:1001']);
+    }
+
+    public function testDuplicateOperationIdAllowedForDifferentAccounts(): void
+    {
+        $manager = new ManagerMock();
+        $manager->forbidDuplicateOperationId = true;
+        $manager->requireOperationId = true;
+
+        $manager->increase(1001, 30, ['operationId' => 'campaign:shared']);
+        $manager->increase(1002, 30, ['operationId' => 'campaign:shared']);
+
+        self::assertCount(2, $manager->transactions);
+    }
+
+    public function testRequireOperationIdRejectsMissingValue(): void
+    {
+        $manager = new ManagerMock();
+        $manager->requireOperationId = true;
+
+        $this->expectException('yii\base\InvalidArgumentException');
+        $manager->increase(1001, 30, []);
+    }
+
+    public function testRequireOperationIdRejectsInvalidValueType(): void
+    {
+        $manager = new ManagerMock();
+        $manager->requireOperationId = true;
+
+        $this->expectException('yii\base\InvalidArgumentException');
+        $manager->increase(1001, 30, ['operationId' => ['nested' => true]]);
+    }
+
     public function testSetAndGetBalanceRules(): void
     {
         $manager = new ManagerMock();

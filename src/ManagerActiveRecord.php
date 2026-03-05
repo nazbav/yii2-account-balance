@@ -260,4 +260,32 @@ class ManagerActiveRecord extends ManagerDbTransaction
 
         return $columnName;
     }
+
+    /**
+     * {@inheritDoc}
+     * @throws InvalidConfigException
+     */
+    protected function hasOperationIdInAccountHistory(mixed $accountId, string $operationId): bool
+    {
+        $class = $this->ensureActiveRecordClass($this->transactionClass, 'transactionClass');
+        $operationIdColumn = $this->ensureSafeColumnName($this->operationIdAttribute);
+
+        $schema = $class::getDb()->getTableSchema($class::tableName());
+        if (!$schema instanceof TableSchema || !$schema->getColumn($operationIdColumn) instanceof \yii\db\ColumnSchema) {
+            throw new InvalidConfigException(self::t('error.operation_id_attribute_not_found', [
+                'attribute' => $operationIdColumn,
+                'table' => $class::tableName(),
+            ]));
+        }
+
+        /** @var ActiveQuery<ActiveRecord> $query */
+        $query = $class::find();
+
+        return $query
+            ->andWhere([
+                $this->accountLinkAttribute => $accountId,
+                $operationIdColumn => $operationId,
+            ])
+            ->exists();
+    }
 }
