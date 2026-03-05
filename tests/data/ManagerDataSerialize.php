@@ -1,5 +1,8 @@
 <?php
 
+declare(strict_types=1);
+
+
 namespace yii2tech\tests\unit\balance\data;
 
 use yii2tech\balance\ManagerDataSerializeTrait;
@@ -14,7 +17,7 @@ class ManagerDataSerialize extends ManagerMock
     /**
      * {@inheritdoc}
      */
-    protected function createTransaction($attributes)
+    protected function createTransaction(array $attributes): mixed
     {
         static $allowedAttributes = [
             'date',
@@ -29,7 +32,7 @@ class ManagerDataSerialize extends ManagerMock
     /**
      * {@inheritdoc}
      */
-    protected function findTransaction($id)
+    protected function findTransaction(mixed $id): ?array
     {
         $transaction = parent::findTransaction($id);
         if ($transaction === null) {

@@ -1,4 +1,7 @@
 <?php
+
+declare(strict_types=1);
+
 /**
  * @link https://github.com/yii2tech
  * @copyright Copyright (c) 2015 Yii2tech
@@ -26,55 +29,38 @@ use yii\di\Instance;
 trait ManagerDataSerializeTrait
 {
     /**
-     * @var string name of the transaction entity attribute, which should be used to store serialized data.
+     * @var string|null name of the transaction entity attribute for serialized data.
      */
-    public $dataAttribute = 'data';
-    /**
-     * @var string|array|SerializerInterface serializer instance or its configuration.
-     * Following shortcuts are supported:
-     *
-     * - 'php' - use [[PhpSerializer]]
-     * - 'json' - use [[JsonSerializer]]
-     *
-     * Using array configuration, you may omit 'class' parameter, in this case [[CallbackSerializer]] will be used.
-     * For example:
-     *
-     * ```php
-     * [
-     *     'serialize' => function ($value) { return serialize($value); },
-     *     'unserialize' => function ($value) { return unserialize($value); },
-     * ]
-     * ```
-     */
-    private $_serializer = 'json';
-
+    public ?string $dataAttribute = 'data';
 
     /**
-     * @return SerializerInterface serializer instance
+     * @var string|array<string, mixed>|SerializerInterface serializer instance or its configuration.
      */
-    public function getSerializer()
+    private string|array|SerializerInterface $_serializer = 'json';
+
+    public function getSerializer(): SerializerInterface
     {
-        if (!is_object($this->_serializer)) {
+        if (!$this->_serializer instanceof SerializerInterface) {
             $this->_serializer = $this->createSerializer($this->_serializer);
         }
+
         return $this->_serializer;
     }
 
     /**
-     * @param SerializerInterface|array|string $serializer serializer to be used
+     * @param SerializerInterface|array<string, mixed>|string $serializer
      */
-    public function setSerializer($serializer)
+    public function setSerializer(SerializerInterface|array|string $serializer): void
     {
         $this->_serializer = $serializer;
     }
 
     /**
-     * Processes attributes to be saved in persistent storage, serializing the ones not allowed for direct storage.
-     * @param array $attributes raw attributes to be processed.
-     * @param array $allowedAttributes list of attribute names, which are allowed to be saved in persistent stage.
-     * @return array actual attributes.
+     * @param array<string, mixed> $attributes
+     * @param array<int, string> $allowedAttributes
+     * @return array<string, mixed>
      */
-    protected function serializeAttributes($attributes, $allowedAttributes)
+    protected function serializeAttributes(array $attributes, array $allowedAttributes): array
     {
         if ($this->dataAttribute === null) {
             return $attributes;
@@ -89,7 +75,7 @@ trait ManagerDataSerializeTrait
                 $dataAttributes[$name] = $value;
             }
         }
-        if (!empty($dataAttributes)) {
+        if ($dataAttributes !== []) {
             $safeAttributes[$this->dataAttribute] = $this->getSerializer()->serialize($dataAttributes);
         }
 
@@ -97,12 +83,10 @@ trait ManagerDataSerializeTrait
     }
 
     /**
-     * Processes the raw entity attributes from the persistent storage, converting serialized data into
-     * actual attributes list.
-     * @param array $attributes raw attribute values from persistent storage.
-     * @return array actual attribute values
+     * @param array<string, mixed> $attributes
+     * @return array<string, mixed>
      */
-    protected function unserializeAttributes($attributes)
+    protected function unserializeAttributes(array $attributes): array
     {
         if ($this->dataAttribute === null) {
             return $attributes;
@@ -110,42 +94,35 @@ trait ManagerDataSerializeTrait
 
         if (empty($attributes[$this->dataAttribute])) {
             unset($attributes[$this->dataAttribute]);
+
             return $attributes;
         }
 
-        $dataAttributes = $this->getSerializer()->unserialize($attributes[$this->dataAttribute]);
+        $rawValue = (string) $attributes[$this->dataAttribute];
+        $dataAttributes = $this->getSerializer()->unserialize($rawValue);
         if (!is_array($dataAttributes)) {
             throw new InvalidArgumentException('Serialized transaction data must be restored as an array.');
         }
         unset($attributes[$this->dataAttribute]);
+
         return array_merge($attributes, $dataAttributes);
     }
 
     /**
-     * Creates serializer from given configuration.
-     * @param string|array $config serializer configuration.
-     * @return SerializerInterface serializer instance
+     * @param string|array<string, mixed> $config
      */
-    protected function createSerializer($config)
+    protected function createSerializer(string|array $config): SerializerInterface
     {
         if (is_string($config)) {
-            switch ($config) {
-                case 'php':
-                    $config = [
-                        'class' => PhpSerializer::className()
-                    ];
-                    break;
-                case 'json':
-                    $config = [
-                        'class' => JsonSerializer::className()
-                    ];
-                    break;
-            }
-        } elseif (is_array($config)) {
-            if (!isset($config['class'])) {
-                $config['class'] = CallbackSerializer::className();
-            }
+            $config = match ($config) {
+                'php' => ['class' => PhpSerializer::class],
+                'json' => ['class' => JsonSerializer::class],
+                default => ['class' => $config],
+            };
+        } elseif (!isset($config['class'])) {
+            $config['class'] = CallbackSerializer::class;
         }
-        return Instance::ensure($config, 'yii2tech\balance\SerializerInterface');
+
+        return Instance::ensure($config, SerializerInterface::class);
     }
 }

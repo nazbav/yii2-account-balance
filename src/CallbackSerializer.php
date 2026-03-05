@@ -1,4 +1,7 @@
 <?php
+
+declare(strict_types=1);
+
 /**
  * @link https://github.com/yii2tech
  * @copyright Copyright (c) 2015 Yii2tech
@@ -18,27 +21,21 @@ use yii\base\BaseObject;
 class CallbackSerializer extends BaseObject implements SerializerInterface
 {
     /**
-     * @var callable PHP callback, which should be used to serialize value.
+     * @var callable(mixed):string callback used for value serialization.
      */
     public $serialize;
+
     /**
-     * @var callable PHP callback, which should be used to unserialize value.
+     * @var callable(string):mixed callback used for value restoration.
      */
     public $unserialize;
 
-
-    /**
-     * {@inheritdoc}
-     */
-    public function serialize($value)
+    public function serialize(mixed $value): string
     {
         return call_user_func($this->serialize, $value);
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function unserialize($value)
+    public function unserialize(string $value): mixed
     {
         return call_user_func($this->unserialize, $value);
     }

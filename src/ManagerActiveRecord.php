@@ -1,4 +1,7 @@
 <?php
+
+declare(strict_types=1);
+
 /**
  * @link https://github.com/yii2tech
  * @copyright Copyright (c) 2015 Yii2tech
@@ -7,11 +10,11 @@
 
 namespace yii2tech\balance;
 
-use yii\base\Model;
+use yii\base\InvalidConfigException;
 use yii\db\ActiveRecord;
 use yii\db\ActiveQuery;
-use yii\db\ActiveRecordInterface;
 use yii\db\BaseActiveRecord;
+use yii\db\Transaction;
 
 /**
  * ManagerActiveRecord is a balance manager, which uses ActiveRecord classes for data storage.
@@ -19,141 +22,99 @@ use yii\db\BaseActiveRecord;
  * relational DB, Redis etc. However, it may lack efficiency comparing to the dedicated
  * [[ManagerDb]] manager.
  *
- * Configuration example:
- *
- * ```php
- * return [
- *     'components' => [
- *         'balanceManager' => [
- *             'class' => 'yii2tech\balance\ManagerActiveRecord',
- *             'accountClass' => 'app\models\BalanceAccount',
- *             'transactionClass' => 'app\models\BalanceTransaction',
- *             'accountBalanceAttribute' => 'balance',
- *             'extraAccountLinkAttribute' => 'extraAccountId',
- *             'dataAttribute' => 'data',
- *         ],
- *     ],
- *     ...
- * ];
- * ```
- *
- * This manager will attempt to save value from transaction data in the attribute, which name matches data key.
- * If such attribute does not exist data will be saved in [[dataAttribute]] column in serialized state.
- *
- * > Note: watch for the keys you use in transaction data: make sure they do not conflict with attributes, which are
- *   reserved for other purposes, like primary keys.
- *
  * @see Manager
- *
- * @author Paul Klimov <klimov.paul@gmail.com>
- * @since 1.0
  */
 class ManagerActiveRecord extends ManagerDbTransaction
 {
     use ManagerDataSerializeTrait;
 
     /**
-     * @var class-string<BaseActiveRecord> name of the ActiveRecord class, which should store account records.
+     * @var string name of the ActiveRecord class, which should store account records.
      */
-    public $accountClass;
-    /**
-     * @var class-string<BaseActiveRecord> name of the ActiveRecord class, which should store transaction records.
-     */
-    public $transactionClass;
-
+    public string $accountClass = '';
 
     /**
-     * {@inheritdoc}
+     * @var string name of the ActiveRecord class, which should store transaction records.
      */
-    protected function findAccountId($attributes)
+    public string $transactionClass = '';
+
+    /**
+     * @param array<string, mixed> $attributes
+     */
+    protected function findAccountId(array $attributes): mixed
     {
-        /** @var class-string<BaseActiveRecord> $class */
-        $class = $this->accountClass;
+        $class = $this->ensureActiveRecordClass($this->accountClass, 'accountClass');
         $model = $class::find()->andWhere($attributes)->one();
-        if (!$model instanceof BaseActiveRecord) {
-            return null;
-        }
-        return $model->getPrimaryKey(false);
+
+        return $model instanceof BaseActiveRecord ? $model->getPrimaryKey(false) : null;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    protected function findTransaction($id)
+    protected function findTransaction(mixed $id): ?array
     {
-        /** @var class-string<BaseActiveRecord> $class */
-        $class = $this->transactionClass;
+        $class = $this->ensureActiveRecordClass($this->transactionClass, 'transactionClass');
         $model = $class::findOne($id);
         if (!$model instanceof BaseActiveRecord) {
             return null;
         }
+
         return $this->unserializeAttributes($model->getAttributes());
     }
 
     /**
-     * {@inheritdoc}
+     * @param array<string, mixed> $attributes
      */
-    protected function createAccount($attributes)
+    protected function createAccount(array $attributes): mixed
     {
-        /** @var class-string<BaseActiveRecord> $class */
-        $class = $this->accountClass;
+        $class = $this->ensureActiveRecordClass($this->accountClass, 'accountClass');
         $model = new $class();
         $model->setAttributes($attributes, false);
         $model->save(false);
+
         return $model->getPrimaryKey(false);
     }
 
     /**
-     * {@inheritdoc}
+     * @param array<string, mixed> $attributes
      */
-    protected function createTransaction($attributes)
+    protected function createTransaction(array $attributes): mixed
     {
-        /** @var class-string<BaseActiveRecord> $class */
-        $class = $this->transactionClass;
+        $class = $this->ensureActiveRecordClass($this->transactionClass, 'transactionClass');
         $model = new $class();
         $model->setAttributes($this->serializeAttributes($attributes, $model->attributes()), false);
         $model->save(false);
+
         return $model->getPrimaryKey(false);
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    protected function incrementAccountBalance($accountId, $amount)
+    protected function incrementAccountBalance(mixed $accountId, int|float $amount): void
     {
-        /** @var class-string<BaseActiveRecord> $class */
-        $class = $this->accountClass;
-
+        $class = $this->ensureActiveRecordClass($this->accountClass, 'accountClass');
         $primaryKeys = $class::primaryKey();
         $primaryKey = array_shift($primaryKeys);
+        if ($primaryKey === null) {
+            throw new InvalidConfigException('Класс счёта должен иметь первичный ключ.');
+        }
 
         $class::updateAllCounters([$this->accountBalanceAttribute => $amount], [$primaryKey => $accountId]);
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function calculateBalance($account)
+    public function calculateBalance(mixed $account): int|float|null
     {
         $accountId = $this->fetchAccountId($account);
+        $class = $this->ensureActiveRecordClass($this->transactionClass, 'transactionClass');
 
-        /** @var class-string<BaseActiveRecord> $class */
-        $class = $this->transactionClass;
         /** @var ActiveQuery<ActiveRecord> $query */
         $query = $class::find();
 
-        return $query
+        $balance = $query
             ->andWhere([$this->accountLinkAttribute => $accountId])
             ->sum($this->amountAttribute);
+        return $balance === null ? null : $this->normalizeAmount($balance);
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    protected function createDbTransaction()
+    protected function createDbTransaction(): ?Transaction
     {
-        /** @var class-string<BaseActiveRecord> $class */
-        $class = $this->transactionClass;
+        $class = $this->ensureActiveRecordClass($this->transactionClass, 'transactionClass');
         $db = $class::getDb();
 
         if ($db->hasMethod('getTransaction') && $db->getTransaction() !== null) {
@@ -165,5 +126,18 @@ class ManagerActiveRecord extends ManagerDbTransaction
         }
 
         return null;
+    }
+
+    /**
+     * @param class-string<BaseActiveRecord>|string $className
+     * @return class-string<BaseActiveRecord>
+     */
+    private function ensureActiveRecordClass(string $className, string $propertyName): string
+    {
+        if ($className === '' || !is_subclass_of($className, BaseActiveRecord::class)) {
+            throw new InvalidConfigException("Свойство \"{$propertyName}\" должно содержать класс ActiveRecord.");
+        }
+
+        return $className;
     }
 }

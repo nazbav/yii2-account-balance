@@ -1,4 +1,7 @@
 <?php
+
+declare(strict_types=1);
+
 /**
  * @link https://github.com/yii2tech
  * @copyright Copyright (c) 2015 Yii2tech
@@ -19,15 +22,11 @@ interface SerializerInterface
 {
     /**
      * Serializes given value.
-     * @param mixed $value value to be serialized
-     * @return string serialized value.
      */
-    public function serialize($value);
+    public function serialize(mixed $value): string;
 
     /**
-     * Restores value from its serialized representations
-     * @param string $value serialized string.
-     * @return mixed restored value
+     * Restores value from its serialized representations.
      */
-    public function unserialize($value);
+    public function unserialize(string $value): mixed;
 }

@@ -1,4 +1,7 @@
 <?php
+
+declare(strict_types=1);
+
 /**
  * @link https://github.com/yii2tech
  * @copyright Copyright (c) 2015 Yii2tech
@@ -20,13 +23,15 @@ class TransactionEvent extends Event
     /**
      * @var mixed transaction related account ID.
      */
-    public $accountId;
+    public mixed $accountId = null;
+
     /**
-     * @var array transaction data.
+     * @var array<string, mixed> transaction data.
      */
-    public $transactionData;
+    public array $transactionData = [];
+
     /**
      * @var mixed transaction ID.
      */
-    public $transactionId;
+    public mixed $transactionId = null;
 }

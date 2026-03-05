@@ -1,5 +1,8 @@
 <?php
 
+declare(strict_types=1);
+
+
 namespace yii2tech\tests\unit\balance\data;
 
 /**
@@ -52,16 +55,19 @@ class ManagerMock extends \yii2tech\balance\Manager
     /**
      * {@inheritdoc}
      */
-    public function calculateBalance($account)
+    public function calculateBalance(mixed $account): int|float|null
     {
-        $accountId = $this->findAccountId($account);
+        $accountId = is_array($account) ? $this->findAccountId($account) : $account;
+        if ($accountId === null) {
+            return null;
+        }
         return $this->accountBalances[$accountId];
     }
 
     /**
      * {@inheritdoc}
      */
-    protected function createTransaction($attributes)
+    protected function createTransaction(array $attributes): mixed
     {
         $transactionId = count($this->transactions);
         $attributes['id'] = $transactionId;
@@ -72,7 +78,7 @@ class ManagerMock extends \yii2tech\balance\Manager
     /**
      * {@inheritdoc}
      */
-    protected function findAccountId($attributes)
+    protected function findAccountId(array $attributes): mixed
     {
         $id = serialize($attributes);
         if (isset($this->accounts[$id])) {
@@ -84,7 +90,7 @@ class ManagerMock extends \yii2tech\balance\Manager
     /**
      * {@inheritdoc}
      */
-    protected function createAccount($attributes)
+    protected function createAccount(array $attributes): mixed
     {
         $id = serialize($attributes);
         $this->accounts[$id] = $id;
@@ -94,7 +100,7 @@ class ManagerMock extends \yii2tech\balance\Manager
     /**
      * {@inheritdoc}
      */
-    protected function incrementAccountBalance($accountId, $amount)
+    protected function incrementAccountBalance(mixed $accountId, int|float $amount): void
     {
         if (!isset($this->accountBalances[$accountId])) {
             $this->accountBalances[$accountId] = 0;
@@ -105,7 +111,7 @@ class ManagerMock extends \yii2tech\balance\Manager
     /**
      * {@inheritdoc}
      */
-    protected function findTransaction($id)
+    protected function findTransaction(mixed $id): ?array
     {
         if (isset($this->transactions[$id])) {
             return $this->transactions[$id];

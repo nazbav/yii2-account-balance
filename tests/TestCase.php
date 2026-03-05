@@ -1,5 +1,8 @@
 <?php
 
+declare(strict_types=1);
+
+
 namespace yii2tech\tests\unit\balance;
 
 use yii\helpers\ArrayHelper;

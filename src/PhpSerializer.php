@@ -1,4 +1,7 @@
 <?php
+
+declare(strict_types=1);
+
 /**
  * @link https://github.com/yii2tech
  * @copyright Copyright (c) 2015 Yii2tech
@@ -18,24 +21,17 @@ use yii\base\BaseObject;
 class PhpSerializer extends BaseObject implements SerializerInterface
 {
     /**
-     * @var bool|array controls class instantiation at `unserialize()`.
+     * @var bool|array<int, class-string> controls class instantiation at `unserialize()`.
      * Set to `false` by default to avoid object injection from untrusted payloads.
      */
-    public $allowedClasses = false;
+    public bool|array $allowedClasses = false;
 
-
-    /**
-     * {@inheritdoc}
-     */
-    public function serialize($value)
+    public function serialize(mixed $value): string
     {
         return serialize($value);
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function unserialize($value)
+    public function unserialize(string $value): mixed
     {
         return unserialize($value, ['allowed_classes' => $this->allowedClasses]);
     }

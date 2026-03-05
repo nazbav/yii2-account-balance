@@ -1,5 +1,8 @@
 <?php
 
+declare(strict_types=1);
+
+
 define('YII_ENABLE_ERROR_HANDLER', false);
 define('YII_DEBUG', true);
 

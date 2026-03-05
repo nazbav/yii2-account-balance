@@ -1,4 +1,7 @@
 <?php
+
+declare(strict_types=1);
+
 /**
  * @link https://github.com/yii2tech
  * @copyright Copyright (c) 2015 Yii2tech
@@ -22,58 +25,56 @@ use yii\helpers\VarDumper;
 abstract class Manager extends Component implements ManagerInterface
 {
     /**
-     * @event TransactionEvent an event raised before creating new transaction. You may adjust
-     * [[TransactionEvent::transactionData]] changing actual data to be saved.
+     * @event TransactionEvent an event raised before creating new transaction.
      */
-    const EVENT_BEFORE_CREATE_TRANSACTION = 'beforeCreateTransaction';
+    public const EVENT_BEFORE_CREATE_TRANSACTION = 'beforeCreateTransaction';
+
     /**
-     * @event TransactionEvent an event raised after new transaction has been created. You may use
-     * [[TransactionEvent::transactionId]] to get new transaction ID.
+     * @event TransactionEvent an event raised after new transaction has been created.
      */
-    const EVENT_AFTER_CREATE_TRANSACTION = 'afterCreateTransaction';
+    public const EVENT_AFTER_CREATE_TRANSACTION = 'afterCreateTransaction';
 
     /**
      * @var bool whether to automatically create requested account, if it does not yet exist.
      */
-    public $autoCreateAccount = true;
+    public bool $autoCreateAccount = true;
+
     /**
      * @var string name of the transaction entity attribute, which should store amount.
      */
-    public $amountAttribute = 'amount';
-    /**
-     * @var string name of the transaction entity attribute, which should be used to link transaction entity with
-     * account entity (store associated account ID).
-     */
-    public $accountLinkAttribute = 'accountId';
-    /**
-     * @var string|null name of the transaction entity attribute, which should store additional affected account ID.
-     * This attribute will be filled only at `transfer()` method execution and will store ID of the account transferred
-     * from or to, depending on the context.
-     * If not set, no information about the extra account context will be saved.
-     *
-     * Note: absence of this field will affect logic of some methods like [[revert()]].
-     */
-    public $extraAccountLinkAttribute;
-    /**
-     * @var string|null name of the account entity attribute, which should store current balance value.
-     */
-    public $accountBalanceAttribute;
-    /**
-     * @var string name of the transaction entity attribute, which should store date.
-     */
-    public $dateAttribute = 'date';
-    /**
-     * @var mixed|callable value which should be used for new transaction date composition.
-     * This can be plain value, object like [[\yii\db\Expression]] or a PHP callback, which returns it.
-     * If not set PHP `time()` function will be used.
-     */
-    public $dateAttributeValue;
-
+    public string $amountAttribute = 'amount';
 
     /**
-     * {@inheritdoc}
+     * @var string name of the transaction entity attribute linking transaction with account.
      */
-    public function increase($account, $amount, $data = [])
+    public string $accountLinkAttribute = 'accountId';
+
+    /**
+     * @var string|null attribute storing second account ID in transfer operation context.
+     */
+    public ?string $extraAccountLinkAttribute = null;
+
+    /**
+     * @var string|null name of the account entity attribute with current balance value.
+     */
+    public ?string $accountBalanceAttribute = null;
+
+    /**
+     * @var string name of the transaction entity attribute storing date.
+     */
+    public string $dateAttribute = 'date';
+
+    /**
+     * @var mixed value or callback used for date composition.
+     */
+    public mixed $dateAttributeValue = null;
+
+    /**
+     * @param mixed $account
+     * @param int|float $amount
+     * @param array<string, mixed> $data
+     */
+    public function increase(mixed $account, int|float $amount, array $data = []): mixed
     {
         $accountId = $this->fetchAccountId($account);
 
@@ -86,7 +87,7 @@ abstract class Manager extends Component implements ManagerInterface
         $data = $this->beforeCreateTransaction($accountId, $data);
 
         if ($this->accountBalanceAttribute !== null) {
-            $this->incrementAccountBalance($accountId, $data[$this->amountAttribute]);
+            $this->incrementAccountBalance($accountId, $this->normalizeAmount($data[$this->amountAttribute]));
         }
         $transactionId = $this->createTransaction($data);
 
@@ -96,17 +97,23 @@ abstract class Manager extends Component implements ManagerInterface
     }
 
     /**
-     * {@inheritdoc}
+     * @param mixed $account
+     * @param int|float $amount
+     * @param array<string, mixed> $data
      */
-    public function decrease($account, $amount, $data = [])
+    public function decrease(mixed $account, int|float $amount, array $data = []): mixed
     {
         return $this->increase($account, -$amount, $data);
     }
 
     /**
-     * {@inheritdoc}
+     * @param mixed $from
+     * @param mixed $to
+     * @param int|float $amount
+     * @param array<string, mixed> $data
+     * @return array<int, mixed>
      */
-    public function transfer($from, $to, $amount, $data = [])
+    public function transfer(mixed $from, mixed $to, int|float $amount, array $data = []): array
     {
         $fromId = $this->fetchAccountId($from);
         $toId = $this->fetchAccountId($to);
@@ -122,37 +129,40 @@ abstract class Manager extends Component implements ManagerInterface
 
         return [
             $this->decrease($fromId, $amount, $fromData),
-            $this->increase($toId, $amount, $toData)
+            $this->increase($toId, $amount, $toData),
         ];
     }
 
     /**
-     * {@inheritdoc}
+     * @param mixed $transactionId
+     * @param array<string, mixed> $data
+     * @return mixed
      */
-    public function revert($transactionId, $data = [])
+    public function revert(mixed $transactionId, array $data = []): mixed
     {
         $transaction = $this->findTransaction($transactionId);
         if (empty($transaction)) {
             throw new InvalidArgumentException("Unable to find transaction '{$transactionId}'");
         }
 
-        $amount = $transaction[$this->amountAttribute];
+        $amount = $this->normalizeAmount($transaction[$this->amountAttribute]);
 
         if ($this->extraAccountLinkAttribute !== null && isset($transaction[$this->extraAccountLinkAttribute])) {
             $fromId = $transaction[$this->accountLinkAttribute];
             $toId = $transaction[$this->extraAccountLinkAttribute];
+
             return $this->transfer($fromId, $toId, $amount, $data);
-        } else {
-            $accountId = $transaction[$this->accountLinkAttribute];
-            return $this->decrease($accountId, $amount, $data);
         }
+
+        $accountId = $transaction[$this->accountLinkAttribute];
+
+        return $this->decrease($accountId, $amount, $data);
     }
 
     /**
      * @param mixed $idOrFilter account ID or filter condition.
-     * @return mixed account ID.
      */
-    protected function fetchAccountId($idOrFilter)
+    protected function fetchAccountId(mixed $idOrFilter): mixed
     {
         if (is_array($idOrFilter)) {
             $accountId = $this->findAccountId($idOrFilter);
@@ -160,97 +170,95 @@ abstract class Manager extends Component implements ManagerInterface
                 if ($this->autoCreateAccount) {
                     $accountId = $this->createAccount($idOrFilter);
                 } else {
-                    throw new InvalidArgumentException('Unable to find account matching filter: ' . VarDumper::export($idOrFilter));
+                    throw new InvalidArgumentException(
+                        'Unable to find account matching filter: ' . VarDumper::export($idOrFilter)
+                    );
                 }
             }
-        } else {
-            $accountId = $idOrFilter;
+
+            return $accountId;
         }
 
-        return $accountId;
+        return $idOrFilter;
     }
 
     /**
-     * Finds account ID matching given filter attributes.
-     * @param array $attributes filter attributes.
-     * @return mixed|null account ID, `null` - if not found.
+     * @param array<string, mixed> $attributes
      */
-    abstract protected function findAccountId($attributes);
+    abstract protected function findAccountId(array $attributes): mixed;
 
     /**
-     * Finds transaction data by ID.
-     * @param mixed $id transaction ID.
-     * @return array|null transaction data, `null` - if not found.
+     * @return array<string, mixed>|null
      */
-    abstract protected function findTransaction($id);
+    abstract protected function findTransaction(mixed $id): ?array;
 
     /**
-     * Creates new account with given attributes.
-     * @param array $attributes account attributes in format: attribute => value
-     * @return mixed created account ID.
+     * @param array<string, mixed> $attributes
      */
-    abstract protected function createAccount($attributes);
+    abstract protected function createAccount(array $attributes): mixed;
 
     /**
-     * Writes transaction data into persistent storage.
-     * @param array $attributes attributes associated with transaction in format: attribute => value
-     * @return mixed new transaction ID.
+     * @param array<string, mixed> $attributes
      */
-    abstract protected function createTransaction($attributes);
+    abstract protected function createTransaction(array $attributes): mixed;
 
-    /**
-     * Increases current account balance value.
-     * @param mixed $accountId account ID.
-     * @param int|float $amount amount to be added to the current balance.
-     */
-    abstract protected function incrementAccountBalance($accountId, $amount);
+    abstract protected function incrementAccountBalance(mixed $accountId, int|float $amount): void;
 
-    /**
-     * Returns actual now date value for the transaction.
-     * @return mixed date attribute value.
-     */
-    protected function getDateAttributeValue()
+    protected function getDateAttributeValue(): mixed
     {
         if ($this->dateAttributeValue === null) {
             return time();
         }
+
         if (is_callable($this->dateAttributeValue)) {
-            return call_user_func($this->dateAttributeValue);
+            return ($this->dateAttributeValue)();
         }
+
         return $this->dateAttributeValue;
     }
 
-    // Events :
+    /**
+     * @throws InvalidArgumentException
+     */
+    protected function normalizeAmount(mixed $amount): int|float
+    {
+        if (is_int($amount) || is_float($amount)) {
+            return $amount;
+        }
+        if (is_numeric($amount)) {
+            return str_contains((string) $amount, '.') ? (float) $amount : (int) $amount;
+        }
+
+        throw new InvalidArgumentException('Amount must be a numeric value.');
+    }
 
     /**
-     * This method is invoked before creating transaction.
-     * @param mixed $accountId account ID.
-     * @param array $data transaction data.
-     * @return array adjusted transaction data.
+     * @param mixed $accountId
+     * @param array<string, mixed> $data
+     * @return array<string, mixed>
      */
-    protected function beforeCreateTransaction($accountId, $data)
+    protected function beforeCreateTransaction(mixed $accountId, array $data): array
     {
         $event = new TransactionEvent([
             'accountId' => $accountId,
-            'transactionData' => $data
+            'transactionData' => $data,
         ]);
         $this->trigger(self::EVENT_BEFORE_CREATE_TRANSACTION, $event);
+
         return $event->transactionData;
     }
 
     /**
-     * This method is invoked after transaction has been created.
-     * @param mixed $transactionId transaction ID.
-     * @param mixed $accountId account ID.
-     * @param array $data transaction data.
-     * @return void
+     * @param mixed $transactionId
+     * @param mixed $accountId
+     * @param array<string, mixed> $data
      */
-    protected function afterCreateTransaction($transactionId, $accountId, $data)
+    protected function afterCreateTransaction(mixed $transactionId, mixed $accountId, array $data): void
     {
         $event = new TransactionEvent([
             'transactionId' => $transactionId,
             'accountId' => $accountId,
-            'transactionData' => $data
+            'transactionData' => $data,
         ]);
         $this->trigger(self::EVENT_AFTER_CREATE_TRANSACTION, $event);
     }

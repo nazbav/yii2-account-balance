@@ -1,4 +1,7 @@
 <?php
+
+declare(strict_types=1);
+
 /**
  * @link https://github.com/yii2tech
  * @copyright Copyright (c) 2015 Yii2tech
@@ -19,25 +22,16 @@ use yii\helpers\Json;
 class JsonSerializer extends BaseObject implements SerializerInterface
 {
     /**
-     * @var int the encoding options. For more details please refer to
-     * <http://www.php.net/manual/en/function.json-encode.php>.
-     * Default is `JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE`.
+     * @var int the encoding options.
      */
-    public $options = 320;
+    public int $options = JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE;
 
-
-    /**
-     * {@inheritdoc}
-     */
-    public function serialize($value)
+    public function serialize(mixed $value): string
     {
         return Json::encode($value, $this->options);
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function unserialize($value)
+    public function unserialize(string $value): mixed
     {
         return Json::decode($value);
     }

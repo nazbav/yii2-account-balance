@@ -1,4 +1,7 @@
 <?php
+
+declare(strict_types=1);
+
 /**
  * @link https://github.com/yii2tech
  * @copyright Copyright (c) 2015 Yii2tech
@@ -18,187 +21,113 @@ use yii\di\Instance;
 /**
  * ManagerDb is a balance manager, which uses relational database as data storage.
  *
- * Configuration example:
- *
- * ```php
- * return [
- *     'components' => [
- *         'balanceManager' => [
- *             'class' => 'yii2tech\balance\ManagerDb',
- *             'accountTable' => '{{%BalanceAccount}}',
- *             'transactionTable' => '{{%BalanceTransaction}}',
- *             'accountBalanceAttribute' => 'balance',
- *             'extraAccountLinkAttribute' => 'extraAccountId',
- *             'dataAttribute' => 'data',
- *         ],
- *     ],
- *     ...
- * ];
- * ```
- *
- * Database migration example:
- *
- * ```php
- * $this->createTable('BalanceAccount', [
- *     'id' => $this->primaryKey(),
- *     'balance' => $this->integer()->notNull()->defaultValue(0),
- *     // ...
- * ]);
- *
- * $this->createTable('BalanceTransaction', [
- *     'id' => $this->primaryKey(),
- *     'date' => $this->integer()->notNull(),
- *     'accountId' => $this->integer()->notNull(),
- *     'extraAccountId' => $this->integer()->notNull(),
- *     'amount' => $this->integer()->notNull()->defaultValue(0),
- *     'data' => $this->text(),
- *     // ...
- * ]);
- * ```
- *
- * This manager will attempt to save value from transaction data in the table column, which name matches data key.
- * If such column does not exist data will be saved in [[dataAttribute]] column in serialized state.
- *
- * > Note: watch for the keys you use in transaction data: make sure they do not conflict with columns, which are
- *   reserved for other purposes, like primary keys.
- *
  * @see Manager
  *
- * @author Paul Klimov <klimov.paul@gmail.com>
- * @since 1.0
+ * @property string $transactionIdAttribute
+ * @property string $accountIdAttribute
+ * @property-read Connection $dbConnection
  */
 class ManagerDb extends ManagerDbTransaction
 {
     use ManagerDataSerializeTrait;
 
     /**
-     * @var Connection|array|string the DB connection object or the application component ID of the DB connection.
-     * After the ManagerDb object is created, if you want to change this property, you should only assign it
-     * with a DB connection object.
+     * @var Connection|array<string, mixed>|string DB connection object or application component ID.
      */
-    public $db = 'db';
+    public Connection|array|string $db = 'db';
+
     /**
      * @var string name of the database table, which should store account records.
      */
-    public $accountTable = '{{%BalanceAccount}}';
+    public string $accountTable = '{{%BalanceAccount}}';
+
     /**
      * @var string name of the database table, which should store transaction records.
      */
-    public $transactionTable = '{{%BalanceTransaction}}';
+    public string $transactionTable = '{{%BalanceTransaction}}';
 
-    /**
-     * @var string name of the account ID attribute at [[accountTable]]
-     */
-    private $_accountIdAttribute;
-    /**
-     * @var string name of the transaction ID attribute at [[transactionTable]]
-     */
-    private $_transactionIdAttribute;
+    private ?string $_accountIdAttribute = null;
+    private ?string $_transactionIdAttribute = null;
 
-
-    /**
-     * {@inheritdoc}
-     */
     public function init(): void
     {
         parent::init();
         $this->db = $this->getDbConnection();
     }
 
-    /**
-     * @return string
-     */
     public function getAccountIdAttribute(): string
     {
         if ($this->_accountIdAttribute === null) {
             $this->_accountIdAttribute = $this->detectPrimaryKey($this->accountTable);
         }
+
         return $this->_accountIdAttribute;
     }
 
-    /**
-     * @param string $accountIdAttribute
-     */
-    public function setAccountIdAttribute($accountIdAttribute): void
+    public function setAccountIdAttribute(string $accountIdAttribute): void
     {
         $this->_accountIdAttribute = $accountIdAttribute;
     }
 
-    /**
-     * @return string
-     */
     public function getTransactionIdAttribute(): string
     {
         if ($this->_transactionIdAttribute === null) {
             $this->_transactionIdAttribute = $this->detectPrimaryKey($this->transactionTable);
         }
+
         return $this->_transactionIdAttribute;
     }
 
-    /**
-     * @param string $transactionIdAttribute
-     */
-    public function setTransactionIdAttribute($transactionIdAttribute): void
+    public function setTransactionIdAttribute(string $transactionIdAttribute): void
     {
         $this->_transactionIdAttribute = $transactionIdAttribute;
     }
 
     /**
-     * {@inheritdoc}
+     * @param array<string, mixed> $attributes
      */
-    protected function findAccountId($attributes)
+    protected function findAccountId(array $attributes): mixed
     {
-        $db = $this->getDbConnection();
         $id = (new Query())
             ->select([$this->getAccountIdAttribute()])
             ->from($this->accountTable)
             ->andWhere($attributes)
-            ->scalar($db);
+            ->scalar($this->getDbConnection());
 
-        if ($id === false) {
-            return null;
-        }
-        return $id;
+        return $id === false ? null : $id;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    protected function findTransaction($id)
+    protected function findTransaction(mixed $id): ?array
     {
-        $idAttribute = $this->getTransactionIdAttribute();
-        $db = $this->getDbConnection();
-
         $row = (new Query())
             ->from($this->transactionTable)
-            ->andWhere([$idAttribute => $id])
-            ->one($db);
+            ->andWhere([$this->getTransactionIdAttribute() => $id])
+            ->one($this->getDbConnection());
 
         if (!is_array($row)) {
             return null;
         }
+
         return $this->unserializeAttributes($row);
     }
 
     /**
-     * {@inheritdoc}
+     * @param array<string, mixed> $attributes
      */
-    protected function createAccount($attributes)
+    protected function createAccount(array $attributes): mixed
     {
         $primaryKeys = $this->getDbConnection()->getSchema()->insert($this->accountTable, $attributes);
         if (!is_array($primaryKeys) || $primaryKeys === []) {
             throw new InvalidConfigException('Не удалось получить первичный ключ после создания счёта.');
         }
-        if (count($primaryKeys) > 1) {
-            return implode(',', $primaryKeys);
-        }
-        return array_shift($primaryKeys);
+
+        return count($primaryKeys) > 1 ? implode(',', $primaryKeys) : array_shift($primaryKeys);
     }
 
     /**
-     * {@inheritdoc}
+     * @param array<string, mixed> $attributes
      */
-    protected function createTransaction($attributes)
+    protected function createTransaction(array $attributes): mixed
     {
         $allowedAttributes = [];
         foreach ($this->getRequiredTableSchema($this->transactionTable)->columns as $column) {
@@ -207,57 +136,49 @@ class ManagerDb extends ManagerDbTransaction
             }
             $allowedAttributes[] = $column->name;
         }
-        $attributes = $this->serializeAttributes($attributes, $allowedAttributes);
-        $primaryKeys = $this->getDbConnection()->getSchema()->insert($this->transactionTable, $attributes);
+
+        $serializedAttributes = $this->serializeAttributes($attributes, $allowedAttributes);
+        $primaryKeys = $this->getDbConnection()->getSchema()->insert($this->transactionTable, $serializedAttributes);
         if (!is_array($primaryKeys) || $primaryKeys === []) {
             throw new InvalidConfigException('Не удалось получить первичный ключ после создания транзакции.');
         }
-        if (count($primaryKeys) > 1) {
-            return implode(',', $primaryKeys);
-        }
-        return array_shift($primaryKeys);
+
+        return count($primaryKeys) > 1 ? implode(',', $primaryKeys) : array_shift($primaryKeys);
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    protected function incrementAccountBalance($accountId, $amount)
+    protected function incrementAccountBalance(mixed $accountId, int|float $amount): void
     {
+        if ($this->accountBalanceAttribute === null) {
+            return;
+        }
+
         $value = new Expression("[[{$this->accountBalanceAttribute}]]+:amount", ['amount' => $amount]);
         $this->getDbConnection()->createCommand()
             ->update($this->accountTable, [$this->accountBalanceAttribute => $value], [$this->getAccountIdAttribute() => $accountId])
             ->execute();
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function calculateBalance($account)
+    public function calculateBalance(mixed $account): int|float|null
     {
         $accountId = $this->fetchAccountId($account);
-        $db = $this->getDbConnection();
-
-        return (new Query())
+        $balance = (new Query())
             ->from($this->transactionTable)
             ->andWhere([$this->accountLinkAttribute => $accountId])
-            ->sum($this->amountAttribute, $db);
+            ->sum($this->amountAttribute, $this->getDbConnection());
+
+        return $balance === null ? null : $this->normalizeAmount($balance);
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    protected function createDbTransaction()
+    protected function createDbTransaction(): ?Transaction
     {
         $db = $this->getDbConnection();
         if ($db->getTransaction() !== null) {
             return null;
         }
+
         return $db->beginTransaction();
     }
 
-    /**
-     * @return Connection
-     */
     protected function getDbConnection(): Connection
     {
         if (!$this->db instanceof Connection) {
@@ -269,11 +190,7 @@ class ManagerDb extends ManagerDbTransaction
         return $this->db;
     }
 
-    /**
-     * @param string $tableName
-     * @return TableSchema
-     */
-    private function getRequiredTableSchema($tableName): TableSchema
+    private function getRequiredTableSchema(string $tableName): TableSchema
     {
         $schema = $this->getDbConnection()->getTableSchema($tableName);
         if ($schema === null) {
@@ -283,11 +200,7 @@ class ManagerDb extends ManagerDbTransaction
         return $schema;
     }
 
-    /**
-     * @param string $tableName
-     * @return string
-     */
-    private function detectPrimaryKey($tableName): string
+    private function detectPrimaryKey(string $tableName): string
     {
         $primaryKeys = $this->getRequiredTableSchema($tableName)->primaryKey;
         $primaryKey = array_shift($primaryKeys);

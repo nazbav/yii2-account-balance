@@ -1,4 +1,7 @@
 <?php
+
+declare(strict_types=1);
+
 /**
  * @link https://github.com/yii2tech
  * @copyright Copyright (c) 2015 Yii2tech
@@ -17,47 +20,45 @@ interface ManagerInterface
 {
     /**
      * Increases account current balance ('debit' operation).
-     * @param array|mixed $account  account ID or filter condition.
+     *
+     * @param mixed $account account ID or filter condition.
      * @param int|float $amount amount.
-     * @param array $data extra data, which should be associated with the transaction
-     * @return mixed transaction ID.
+     * @param array<string, mixed> $data extra data associated with the transaction.
      */
-    public function increase($account, $amount, $data = []);
+    public function increase(mixed $account, int|float $amount, array $data = []): mixed;
 
     /**
      * Decreases account current balance ('credit' operation).
-     * @param array|mixed $account account ID or filter condition.
+     *
+     * @param mixed $account account ID or filter condition.
      * @param int|float $amount amount.
-     * @param array $data extra data, which should be associated with the transaction.
-     * @return mixed transaction ID.
+     * @param array<string, mixed> $data extra data associated with the transaction.
      */
-    public function decrease($account, $amount, $data = []);
+    public function decrease(mixed $account, int|float $amount, array $data = []): mixed;
 
     /**
      * Transfers amount from one account to the other one.
-     * @param array|mixed $from account ID or filter condition.
-     * @param array|mixed $to account ID or filter condition.
+     *
+     * @param mixed $from account ID or filter condition.
+     * @param mixed $to account ID or filter condition.
      * @param int|float $amount amount.
-     * @param array $data extra data, which should be associated with the transaction.
-     * @return array list of created transaction IDs.
+     * @param array<string, mixed> $data extra data associated with the transaction.
+     * @return array<int, mixed> list of created transaction IDs.
      */
-    public function transfer($from, $to, $amount, $data = []);
+    public function transfer(mixed $from, mixed $to, int|float $amount, array $data = []): array;
 
     /**
      * Reverts specified transaction.
-     * This method does not deletes original transaction, but creates new one, which compensate it.
-     * If transaction has been created via [[transfer()]] method, 2 transactions will be created affecting both
-     * accounts used at [[transfer()]].
+     *
      * @param mixed $transactionId ID of the transaction to be reverted.
-     * @param array $data extra transaction data
-     * @return array|mixed transaction ID or list of transaction IDs.
+     * @param array<string, mixed> $data extra transaction data.
      */
-    public function revert($transactionId, $data = []);
+    public function revert(mixed $transactionId, array $data = []): mixed;
 
     /**
      * Calculates current account balance summarizing all related transactions.
-     * @param array|mixed $account account ID or filter condition.
-     * @return int|float current balance.
+     *
+     * @param mixed $account account ID or filter condition.
      */
-    public function calculateBalance($account);
+    public function calculateBalance(mixed $account): int|float|null;
 }
