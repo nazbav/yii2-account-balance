@@ -12,7 +12,7 @@ use yii2tech\tests\unit\balance\data\BalanceTransaction;
  */
 class ManagerActiveRecordTest extends TestCase
 {
-    protected function setUp()
+    protected function setUp(): void
     {
         parent::setUp();
         $this->setupTestDbData();
@@ -28,6 +28,11 @@ class ManagerActiveRecordTest extends TestCase
         // Structure :
 
         $table = 'BalanceAccount';
+        try {
+            $db->createCommand()->dropTable($table)->execute();
+        } catch (\Throwable $e) {
+            // table may not exist on fresh DB.
+        }
         $columns = [
             'id' => 'pk',
             'userId' => 'integer',
@@ -36,6 +41,11 @@ class ManagerActiveRecordTest extends TestCase
         $db->createCommand()->createTable($table, $columns)->execute();
 
         $table = 'BalanceTransaction';
+        try {
+            $db->createCommand()->dropTable($table)->execute();
+        } catch (\Throwable $e) {
+            // table may not exist on fresh DB.
+        }
         $columns = [
             'id' => 'pk',
             'date' => 'integer',
@@ -81,7 +91,7 @@ class ManagerActiveRecordTest extends TestCase
 
         $manager->increase(1, 50, ['extra' => 'custom']);
         $transaction = $this->getLastTransaction();
-        $this->assertContains('custom', $transaction['data']);
+        $this->assertStringContainsString('custom', $transaction['data']);
     }
 
     /**

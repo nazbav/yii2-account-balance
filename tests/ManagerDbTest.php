@@ -11,7 +11,7 @@ use yii2tech\balance\ManagerDb;
  */
 class ManagerDbTest extends TestCase
 {
-    protected function setUp()
+    protected function setUp(): void
     {
         parent::setUp();
         $this->setupTestDbData();
@@ -27,6 +27,11 @@ class ManagerDbTest extends TestCase
         // Structure :
 
         $table = 'BalanceAccount';
+        try {
+            $db->createCommand()->dropTable($table)->execute();
+        } catch (\Throwable $e) {
+            // table may not exist on fresh DB.
+        }
         $columns = [
             'id' => 'pk',
             'userId' => 'integer',
@@ -35,6 +40,11 @@ class ManagerDbTest extends TestCase
         $db->createCommand()->createTable($table, $columns)->execute();
 
         $table = 'BalanceTransaction';
+        try {
+            $db->createCommand()->dropTable($table)->execute();
+        } catch (\Throwable $e) {
+            // table may not exist on fresh DB.
+        }
         $columns = [
             'id' => 'pk',
             'date' => 'integer',
@@ -69,7 +79,7 @@ class ManagerDbTest extends TestCase
 
         $manager->increase(1, 50, ['extra' => 'custom']);
         $transaction = $this->getLastTransaction();
-        $this->assertContains('custom', $transaction['data']);
+        $this->assertStringContainsString('custom', $transaction['data']);
     }
 
     /**
@@ -161,6 +171,6 @@ class ManagerDbTest extends TestCase
             ]
         );
         $transaction = $this->getLastTransaction();
-        $this->assertContains('123456789', $transaction['data']);
+        $this->assertStringContainsString('123456789', $transaction['data']);
     }
 }

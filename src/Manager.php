@@ -243,7 +243,7 @@ abstract class Manager extends Component implements ManagerInterface
      * @param mixed $transactionId transaction ID.
      * @param mixed $accountId account ID.
      * @param array $data transaction data.
-     * @return array adjusted transaction data.
+     * @return void
      */
     protected function afterCreateTransaction($transactionId, $accountId, $data)
     {

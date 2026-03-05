@@ -1,0 +1,14 @@
+includes:
+    - vendor/phpstan/phpstan-phpunit/extension.neon
+
+parameters:
+    level: 8
+    paths:
+        - src
+        - tests
+    bootstrapFiles:
+        - tests/phpstan-bootstrap.php
+    excludePaths:
+        analyse:
+            - tests/compatibility.php
+            - tests/data/travis

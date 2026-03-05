@@ -12,13 +12,13 @@ class TestCase extends \PHPUnit\Framework\TestCase
 {
     public static $params;
 
-    protected function setUp()
+    protected function setUp(): void
     {
         parent::setUp();
         $this->mockApplication();
     }
 
-    protected function tearDown()
+    protected function tearDown(): void
     {
         parent::tearDown();
         $this->destroyApplication();
@@ -47,15 +47,20 @@ class TestCase extends \PHPUnit\Framework\TestCase
      */
     protected function mockApplication($config = [], $appClass = '\yii\console\Application')
     {
+        $dbConfig = static::getParam('db', [
+            'class' => 'yii\db\Connection',
+            'dsn' => 'sqlite::memory:',
+        ]);
+        if (!isset($dbConfig['class'])) {
+            $dbConfig['class'] = 'yii\db\Connection';
+        }
+
         new $appClass(ArrayHelper::merge([
             'id' => 'testapp',
             'basePath' => __DIR__,
             'vendorPath' => $this->getVendorPath(),
             'components' => [
-                'db' => [
-                    'class' => 'yii\db\Connection',
-                    'dsn' => 'sqlite::memory:',
-                ],
+                'db' => $dbConfig,
             ],
         ], $config));
     }

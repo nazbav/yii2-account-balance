@@ -6,11 +6,12 @@
  */
 
 $config = [
-    'mongodb' => [
-        'dsn' => 'mongodb://travis:test@localhost:27017/yii2test',
-        'options' => [],
-        'driverOptions' => [],
-    ]
+    'db' => [
+        'dsn' => getenv('YII_TEST_DB_DSN') ?: 'sqlite::memory:',
+        'username' => getenv('YII_TEST_DB_USERNAME') ?: null,
+        'password' => getenv('YII_TEST_DB_PASSWORD') ?: null,
+        'charset' => getenv('YII_TEST_DB_CHARSET') ?: 'utf8mb4',
+    ],
 ];
 
 if (is_file(__DIR__ . '/config.local.php')) {

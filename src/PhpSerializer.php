@@ -18,6 +18,13 @@ use yii\base\BaseObject;
 class PhpSerializer extends BaseObject implements SerializerInterface
 {
     /**
+     * @var bool|array controls class instantiation at `unserialize()`.
+     * Set to `false` by default to avoid object injection from untrusted payloads.
+     */
+    public $allowedClasses = false;
+
+
+    /**
      * {@inheritdoc}
      */
     public function serialize($value)
@@ -30,6 +37,6 @@ class PhpSerializer extends BaseObject implements SerializerInterface
      */
     public function unserialize($value)
     {
-        return unserialize($value);
+        return unserialize($value, ['allowed_classes' => $this->allowedClasses]);
     }
 }

@@ -7,6 +7,7 @@
 
 namespace yii2tech\balance;
 
+use yii\base\InvalidArgumentException;
 use yii\di\Instance;
 
 /**
@@ -113,6 +114,9 @@ trait ManagerDataSerializeTrait
         }
 
         $dataAttributes = $this->getSerializer()->unserialize($attributes[$this->dataAttribute]);
+        if (!is_array($dataAttributes)) {
+            throw new InvalidArgumentException('Serialized transaction data must be restored as an array.');
+        }
         unset($attributes[$this->dataAttribute]);
         return array_merge($attributes, $dataAttributes);
     }

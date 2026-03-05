@@ -59,7 +59,6 @@ This extension introduces term 'balance manager' as a Yii application component,
 Several implementations of such component are provided:
 
  - [[yii2tech\balance\ManagerDb]] - uses a relational database as a data storage.
- - [[yii2tech\balance\ManagerMongoDb]] - uses MongoDB as a data storage.
  - [[yii2tech\balance\ManagerActiveRecord]] - uses ActiveRecord classes for the data storage.
 
 Please refer to the particular manager class for more details.

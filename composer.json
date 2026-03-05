@@ -60,6 +60,7 @@
         "phpunit/phpunit": "^9.6",
         "phpstan/phpstan": "^1.12",
         "vimeo/psalm": "^5.26",
-        "roave/security-advisories": "dev-latest"
+        "roave/security-advisories": "dev-latest",
+        "phpstan/phpstan-phpunit": "^1.4"
     }
 }

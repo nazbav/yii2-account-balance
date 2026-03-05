@@ -33,7 +33,7 @@ abstract class ManagerDbTransaction extends Manager
             $result = parent::increase($account, $amount, $data);
             $this->commitDbTransaction();
             return $result;
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->rollBackDbTransaction();
             throw $e;
         }
@@ -49,7 +49,7 @@ abstract class ManagerDbTransaction extends Manager
             $result = parent::transfer($from, $to, $amount, $data);
             $this->commitDbTransaction();
             return $result;
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->rollBackDbTransaction();
             throw $e;
         }
@@ -65,7 +65,7 @@ abstract class ManagerDbTransaction extends Manager
             $result = parent::revert($transactionId, $data);
             $this->commitDbTransaction();
             return $result;
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->rollBackDbTransaction();
             throw $e;
         }
